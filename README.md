@@ -32,3 +32,5 @@ You should see this as part of the virtual environment (SpeechToText).
     * Checking if the end of the array is a dead zone should be such a quick operation that the time away from recording audio should hopefully not cut out enough audio to mess with the sample. Have to check this though.
 * Once the dead zone is confirmed, send the sample to the model.
 * Repeat the process.
+* This could be great for single words, but slurring words together or speaking quickly could be an issue. Getting the timing right between the words could be tricky.
+    * At a certain point, there should be a timing cutoff to prevent a long string of unbroken speech for being too much for the model. At that point though, you likely didn't want to pass this to the model anyways.
