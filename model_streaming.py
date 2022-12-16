@@ -5,6 +5,10 @@ import pyaudio
 import time
 import numpy as np
 
+# import wave
+# import pathlib
+# import os
+
 
 def working_test():
 
@@ -53,8 +57,8 @@ def detect_and_sample() -> np.array:
 
     while True:
         
-        sample = read_audio_stream(stream=stream, chunk_size=CHUNK, read_time_s=.1)
-        
+        sample = read_audio_stream(stream=stream, chunk_size=CHUNK, read_time_s=.2)
+
         is_active, ends_dead = activity_levels(sample=sample)
 
         if is_active:
@@ -68,6 +72,13 @@ def detect_and_sample() -> np.array:
     stream.stop_stream()
     stream.close()
     p.terminate()
+
+    # write_audio(
+    #     p=p, 
+    #     frames=full_raw, 
+    #     n_channels=CHANNELS, 
+    #     format=FORMAT, 
+    #     sample_rate=RATE)
 
     return full_sample
 
@@ -115,8 +126,10 @@ def activity_levels(sample: np.array):
 
 def transcribe_audio(audio_array, model, processor) -> list:
 
+    SAMPLING_RATE = 16000 # Standard, but should be same as in detect_and_sample().
+
     # Tokenize.
-    input_values = processor(audio_array, return_tensors="pt", padding="longest").input_values  # Batch size 1.
+    input_values = processor(audio_array, return_tensors="pt", padding="longest", sampling_rate=16000).input_values  # Batch size 1.
 
     # Retrieve logits.
     logits = model(input_values).logits
@@ -147,8 +160,22 @@ def main(run_time: float=10) -> None:
 
     return
 
+def write_audio(p, frames: list, n_channels, format, sample_rate) -> None:
+
+    repo_folder = os.path.dirname(str(pathlib.Path(__file__).absolute()))
+    audio_file = os.path.join(repo_folder, 'Temp Audio Files', 'audio.wav')
+
+    wf = wave.open(audio_file, 'wb')
+    wf.setnchannels(n_channels)
+    wf.setsampwidth(p.get_sample_size(format))
+    wf.setframerate(sample_rate)
+    wf.writeframes(b''.join(frames))
+    wf.close()
+
+    return
+
 
 # MAIN:
-main()
+main(run_time=100)
 
 

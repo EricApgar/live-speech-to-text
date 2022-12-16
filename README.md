@@ -1,7 +1,9 @@
 # LiveSpeechToText
 Live speech to text transcription.
 
-# Method:
+# Methods:
+
+## cycle_wav.py
 
 Super janky method.  
 Start recording n-second samples.  
@@ -9,6 +11,10 @@ After every n seconds, save the audio as a .wav file.
 Send that audio to the model to translate to text.  
 Delete the audio file.  
 Repeat.  
+
+## model_streaming.py
+
+This samples super short clips of sound (.1 sec) and connects them together to create a single coherent audio sample. That single sample is then fed to the model.
 
 # Notes:
 When you run the first time you might get an error about "ffmpeg".  
