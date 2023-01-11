@@ -17,7 +17,7 @@ Virtual environment can be created based off of "requirements.txt".
 
 ### **Associated file:** model_streaming.py
 
-Summary: This is by far the best method. 
+Summary: This is by far the best method. Run this file to start the program. Adjust the parameters at the bottom of the file to change the time it will run for.
 
 * Record super short samples of sound (~.1 seconds in length).
 * Analyze each sample for exceeding a sound threshold above an adjustable limit.
