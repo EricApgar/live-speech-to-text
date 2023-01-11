@@ -11,6 +11,8 @@ There is a rudimentary (but adjustable) system for determining whether or not to
 
 Virtual environment can be created based off of "requirements.txt".
 
+Make sure that some sort of recording capable device is connected. 
+
 # Methods:
 
 ## 1. Stream sound samples to model (RECOMMENDED)
