@@ -53,6 +53,72 @@ I didn't get this error creating a venv so maybe just don't use Anaconda.
 conda install ffmpeg
 ```
 
+## Notes on Installing things in Linux:
+
+Download the python tarball (.tar.xz file) from Python website:
+```
+$ wget https://www.python.org/ftp/python/3.7.8/Python-3.7.8.tar.xz
+```
+By default, this file is downloaded into the "/home/pi/" directory - I think because the default location for the command window is here, so unless you change that location when you open the command window, the tar file will download here.
+
+Install python from the tarball file:
+```
+$ tar -xf Python-3.7.8.tar.xz
+```
+A folder called "Python-3.7.8" should now be created at the location of the tarball file. 
+
+Change dir into the python folder and then "configure" the system. This configure step can take a while - 15 min?
+```
+$ cd Python-3.7.8
+$ ./configure
+```
+
+Once it's configured, create an alternate install of python for the new version. This step can take a long time (>1 hour).
+```
+$ sudo make altinstall
+```
+
+Python 3.7.8 should now be available. Im still not clear on the intricacies of how the multiple python versions are accessed. For instance, the three related calls to python below correspond to running python==2.7, python==3.7.3, and python==3.7.8 respectively.
+```
+$ python
+$ python3
+$ python3.7
+```
+It has something to do with which versions are already installed, and the process that it goes through to run a specific version, but I don't know the specifics.
+
+The actual executable for this new version of Python is located at "/usr/loca/bin/python3.7
+
+## Changing what version of python activates in command window:
+Which version of python that is referenced when called in the command window can be changed by editing some file.
+
+Open ~/.bashrc file using nano:
+```
+$ sudo nano ~/.bashrc
+```
+
+Add a new alias on the top of the file to change your default python executable:
+```
+alias python3='python3.7.8'
+```
+You could also change the alias to something else, like just "python" as opposed to "python3":
+```
+alias python='python3.7.8'. 
+```
+
+Once done, exit nano and source your .bashrc file:
+```
+. ~/.bashrc
+```
+
+## Other:
+Need instructions on installing a new version of python in linux. How to add it to the path (so its startable from the command line), and how to specify location (and what location is preferrable if there is one).
+
+It installed in /home/pi but I'm not sure if I set that or not.
+ 
+Where to install virtualenv to. It doesnt automatically get added to the path either when you install which is maybe something you want.
+
+
+
 # Future:
 1. Detecting if a given clip had spoken voice in it as opposed to just a sound above the threshold.
 
