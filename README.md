@@ -70,7 +70,7 @@ A folder called "Python-3.7.8" should now be created at the location of the tarb
 Change dir into the python folder and then "configure" the system. This configure step can take a while - 15 min?
 ```
 $ cd Python-3.7.8
-$ ./configure
+$ ./configure --enable-optimizations
 ```
 
 Once it's configured, create an alternate install of python for the new version. This step can take a long time (>1 hour).
@@ -89,6 +89,24 @@ It has something to do with which versions are already installed, and the proces
 The actual executable for this new version of Python is located at "/usr/loca/bin/python3.7
 
 ## Changing what version of python activates in command window:
+
+List the current alternatives for python. Since you likely have none, **this will likely result in an error**.
+```
+sudo update-alternatives --list python
+```
+
+So, let's actually update the list.
+```
+sudo update-alternatives --install "<full path to current python exe>" python "<full path to alternate python exe>" 1
+```
+
+Here's an example with actual information. In this case, we map (?) the current python executable (which is the default Python 2) to a new install of python that I did manually (Python 3.7.8):
+```
+sudo update-alternatives --install "/usr/bin/python" python "/usr/local/bin/python3.7" 1
+```
+
+## THE FOLLOWING INSTRUCTIONS DID NOT SEEM TO WORK (controlled for posterity):
+
 Which version of python that is referenced when called in the command window can be changed by editing some file.
 
 Open ~/.bashrc file using nano:
