@@ -11,6 +11,16 @@ There is a rudimentary (but adjustable) system for determining whether or not to
 
 Virtual environment can be created based off of "requirements.txt".
 
+## Linux:
+On linux (RPi), you might have to run:
+```
+sudo apt install portaudio19-dev python3-pyaudio
+```
+
+This should fix an error when installing from requirements.txt that yells about portaudio installing when trying to install "PyAudio" which is a library in requirements.txt that is needed.
+
+---
+
 Make sure that some sort of recording capable device is connected. 
 
 # Methods:
@@ -41,6 +51,29 @@ Summary: This samples super short clips of sound (n-seconds) and connects them t
 * Delete the audio file.  
 * Repeat.  
 
+# Seeed Studio Microphone Hat Setup:
+The Hin Tak repo seems to still be making current changes and support for the Respeaker Sound Cards (by Seeed Studio). I recommend the instructions on their [repo](https://github.com/HinTak/seeed-voicecard).
+
+As a secondary, Adafruit has instructions for the sound card they sell which seems to be the same basic card (at least physically) and their [instructions](https://learn.adafruit.com/adafruit-voice-bonnet/audio-setup) also look the same (because I think it's the same drivers which supports the idea that the sound cards are the same).
+
+[Instructions from Seeed](https://wiki.seeedstudio.com/ReSpeaker_2_Mics_Pi_HAT_Raspberry/) are the third resource for posterity and information but the last time their GitHub was updated was 2021 which is not encouraging.
+
+Connect the HAT to the RPi. Make sure that the HAT is connected properly in orientation and that the pins are all lined up (it's suprisingly easy to be offset by a pin or two). **Make sure that the HAT is powered** (not from the RPi, but from another external power source, like where the RPi draws power from).
+
+### Install the HAT drivers.
+```
+git clone https://github.com/HinTak/seeed-voicecard
+cd seeed-voicecard
+sudo ./install.sh
+sudo reboot now
+```
+
+Once rebooted, check to make sure the HAT shows up. This should list all available sound recording devices.
+```
+arecord -l
+```
+
+You should see something like "seeed2micvoicec" listed under the recording devices.
 
 # Notes:
 **The preferred method is to create a python virtual environment using "venv" and the "requirements.txt" file.**
@@ -157,3 +190,11 @@ My stream of conscious notes on how to solve the problem.
 * Repeat the process.
 * This could be great for single words, but slurring words together or speaking quickly could be an issue. Getting the timing right between the words could be tricky.
     * At a certain point, there should be a timing cutoff to prevent a long string of unbroken speech for being too much for the model. At that point though, you likely didn't want to pass this to the model anyways.
+
+
+# Notes
+
+Check version of pip for specific python version:
+```
+pi@raspberrypi:~ $ python3.7 -m pip --version
+```
