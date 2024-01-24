@@ -19,6 +19,133 @@ sudo apt install portaudio19-dev python3-pyaudio
 
 This should fix an error when installing from requirements.txt that yells about portaudio installing when trying to install "PyAudio" which is a library in requirements.txt that is needed.
 
+### Setup Recording Device:
+Select the speaker HAT by running:
+```
+alsamixer
+```
+and choosing the right soundcard for recording device using the F keys and menu options.
+
+Todo: Add instructions for recording and then playing a test .wav file.
+
+---
+
+### Enabling Recording Device Hardware:
+The following information generated from Chat GPT4.
+
+**User**: *I have a raspberry pi 4B.  I added a Seeed Studio 2 speaker mic HAT to the raspberry pi.  How do I enable the HAT on the pi and what config files do I edit to make this HAT the default recording hardware for the Raspberry Pi?*
+
+**Chat GPT4:** To enable the Seeed Studio 2-Mic HAT on your Raspberry Pi 4B and set it as the default recording hardware, you'll need to follow a series of steps. These steps typically involve installing necessary drivers, configuring audio settings, and editing certain configuration files. Here's a general guide to get you started:
+
+1. **Update Your Raspberry Pi:**
+   First, make sure your Raspberry Pi is up to date. Open a terminal and run:
+   ```bash
+   sudo apt-get update
+   sudo apt-get upgrade
+   ```
+
+2. **Install the Seeed Studio 2-Mic HAT drivers:**
+   Seeed Studio usually provides a script or commands to install the necessary drivers for their HATs. You can find these instructions on their website or in the documentation that came with the HAT. The installation command is generally something like this:
+   ```bash
+   git clone https://github.com/respeaker/seeed-voicecard.git
+   cd seeed-voicecard
+   sudo ./install.sh
+   sudo reboot
+   ```
+
+   **USER NOTE:** For this block of code to install the drivers, see the section below on Seeed Hardware Setup instead. I think that driver set is more up to date than GPT's suggestion. Both would probably work.
+
+3. **Verify the Installation:**
+   After rebooting, check if the HAT is recognized by running:
+   ```bash
+   arecord -l
+   ```
+   This command lists all recording hardware. You should see the Seeed 2-Mic HAT listed.
+
+4. **Set the 2-Mic HAT as the Default Recording Device:**
+   To make the 2-Mic HAT the default recording device, you'll need to edit the `.asoundrc` file in your home directory. If this file doesn't exist, you'll create it.
+   ```bash
+   nano ~/.asoundrc
+   ```
+   Then, add the following configuration:
+   ```bash
+   pcm.!default {
+       type asym
+       playback.pcm {
+           type plug
+           slave.pcm "hw:0,0"
+       }
+       capture.pcm {
+           type plug
+           slave.pcm "hw:1,0"  # Adjust the card and device number based on your arecord -l output
+       }
+   }
+   ```
+
+5. **Adjust the ALSA Mixer Controls:**
+   Use `alsamixer` to adjust the volume and capture settings:
+   ```bash
+   alsamixer
+   ```
+   Make sure to select the Seeed 2-Mic HAT and adjust the settings as needed.
+
+6. **Test the Recording:**
+   To test if everything is set up correctly, you can record a short audio clip:
+   ```bash
+   arecord -D plughw:1,0 -d 5 test.wav
+   ```
+   Replace `1,0` with the card and device number of your 2-Mic HAT if different. The `-d 5` option specifies a 5-second recording. Play the recording with:
+   ```bash
+   aplay test.wav
+   ```
+
+7. **Additional Configuration:**
+   If you are using applications that rely on PulseAudio, you might need to configure PulseAudio to use the HAT as the default device. This can be done by editing the `/etc/pulse/default.pa` file.
+
+Remember, these instructions are quite general. For specific details, especially regarding the driver installation for the Seeed Studio 2-Mic HAT, it's important to refer to the official documentation provided by Seeed Studio. Some steps might slightly vary depending on the specific version of the Raspberry Pi OS and the HAT firmware.
+
+**User:** *Instead of editing the .asoundrc file, can I edit the "asound.config" file?  What is the difference between the ".asoundrc" file and the "asound.config" file?*
+
+Yes, you can edit the `asound.conf` file instead of the `.asoundrc` file, and it's important to understand the difference between these two.
+
+1. **`.asoundrc`:**
+   - The `.asoundrc` file is a user-specific ALSA (Advanced Linux Sound Architecture) configuration file. It's typically located in a user's home directory (`~/.asoundrc`).
+   - This file is read by ALSA for the particular user who owns the file. It means the configurations set in `.asoundrc` apply only to the user account under which it is saved.
+   - If each user on the system requires different ALSA settings, `.asoundrc` is used to set these preferences on a per-user basis.
+
+2. **`asound.conf`:**
+   - The `asound.conf` file serves a similar purpose but is system-wide. It is typically located in `/etc/` directory (`/etc/asound.conf`).
+   - This file is read by ALSA for all users on the system. Any settings defined here apply globally, across all user accounts.
+   - If you want to set default ALSA configurations that apply to all users on the system, you use `asound.conf`.
+
+**Modifying `asound.conf` for the Seeed Studio 2-Mic HAT:**
+
+To set the Seeed Studio 2-Mic HAT as the default recording device for the entire system, you can edit the `asound.conf` file. The process is similar to editing `.asoundrc`, but with system-wide implications:
+
+1. Open the `asound.conf` file with a text editor (you'll need sudo privileges):
+   ```bash
+   sudo nano /etc/asound.conf
+   ```
+
+2. Add the configuration for the Seeed Studio 2-Mic HAT, similar to what you would add in `.asoundrc`:
+   ```bash
+   pcm.!default {
+       type asym
+       playback.pcm {
+           type plug
+           slave.pcm "hw:0,0"
+       }
+       capture.pcm {
+           type plug
+           slave.pcm "hw:1,0"  # Adjust as necessary based on your system
+       }
+   }
+   ```
+
+3. Save the file and exit the editor. You may need to restart the ALSA service or reboot the Raspberry Pi to apply these changes.
+
+By editing `asound.conf`, you ensure that the Seeed Studio 2-Mic HAT is set as the default recording device for all users on your Raspberry Pi. Remember to always backup original configuration files before making changes.
+
 ---
 
 Make sure that some sort of recording capable device is connected. 
