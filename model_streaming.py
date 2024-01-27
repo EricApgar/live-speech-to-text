@@ -18,7 +18,7 @@ def working_test():
     # load model and tokenizer
     processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base-960h")
     model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-base-960h")
-        
+
     # load dummy dataset and read soundfiles
     ds = load_dataset("patrickvonplaten/librispeech_asr_dummy", "clean", split="validation")
 
@@ -193,15 +193,49 @@ def transcribe_audio_openai_whisper(audio_array, model, processor) -> list:
 
     return transcription
 
-def main(run_time: float=10, show_plot: bool=False, stop_word: str='stop') -> None:
+def chatgpt_whisper_transcribe(audio_array, model, processor):
+    # Load the Whisper model and processor
+    # model = WhisperForConditionalGeneration.from_pretrained(model_name)
+    # processor = WhisperProcessor.from_pretrained(model_name)
+
+    # Ensure the audio is in the correct sample rate
+    # Whisper model expects the audio to be in 16kHz
+    # You can use torchaudio or other libraries to resample if necessary
+
+    # Convert the numpy array to a PyTorch tensor
+    input_values = torch.tensor(audio_array)#.unsqueeze(0)  # Add batch dimension
+
+    # Process the audio input
+    inputs = processor(input_values, sampling_rate=16000, return_tensors="pt")
+
+    # Extract the processed input values for the model
+    model_input = inputs.input_values if "input_values" in inputs else inputs["input_features"]
+
+    # Generate the transcription
+    with torch.no_grad():
+        generated_ids = model.generate(model_input)
+
+    # Decode the generated ids to text
+    transcription = processor.batch_decode(generated_ids)
+
+    return transcription
+
+
+def main(
+    run_time: float=10,
+    show_plot: bool=False,
+    stop_word: str='stop',
+    model_type: str='facebook') -> None:
 
     # Load model and tokenizer.
-    # processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base-960h")
-    # model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-base-960h")
-
-    processor = WhisperProcessor.from_pretrained("openai/whisper-tiny.en")
-    model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny.en")
-
+    if model_type == 'facebook':
+        processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base-960h")
+        model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-base-960h")
+    elif model_type == 'whisper':
+        processor = WhisperProcessor.from_pretrained("openai/whisper-tiny.en")
+        model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny.en")
+    else:
+        raise ValueError('Invalid model_type!')
 
     start_time = time.time()
 
@@ -211,9 +245,15 @@ def main(run_time: float=10, show_plot: bool=False, stop_word: str='stop') -> No
 
         data = detect_and_sample(show_plot=show_plot)
 
-        # transcription = transcribe_audio(data, model=model, processor=processor)
-        transcription = transcribe_audio_openai_whisper(data, model=model, processor=processor)
-
+        if model_type == 'facebook':
+            transcription = transcribe_audio(data, model=model, processor=processor)
+        elif model_type == 'whisper':
+            transcription = chatgpt_whisper_transcribe(data, model=model, processor=processor)
+            # transcription = transcribe_audio_openai_whisper(data, model=model, processor=processor)
+        else:
+            pass
+        
+        print(transcription)
         print(transcription[0])
 
         if transcription[0] == stop_word.upper():
@@ -222,6 +262,8 @@ def main(run_time: float=10, show_plot: bool=False, stop_word: str='stop') -> No
     return
 
 
-# MAIN:
-main(run_time=100, show_plot=False)
-# working_test()
+if __name__ == '__main__':
+    # working_test()
+    # working_test_openai_whisper()
+    main(run_time=30, model_type='whisper')
+    
