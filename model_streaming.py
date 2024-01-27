@@ -1,3 +1,4 @@
+from transformers import WhisperProcessor, WhisperForConditionalGeneration
 from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC
 from datasets import load_dataset
 import torch
@@ -32,6 +33,29 @@ def working_test():
     # take argmax and decode
     predicted_ids = torch.argmax(logits, dim=-1)
     transcription = processor.batch_decode(predicted_ids)
+
+    print(transcription)
+
+    return
+
+def working_test_openai_whisper():
+
+    # load model and tokenizer
+    processor = WhisperProcessor.from_pretrained("openai/whisper-tiny.en")
+    model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny.en")
+        
+    # load dummy dataset and read soundfiles
+    ds = load_dataset("patrickvonplaten/librispeech_asr_dummy", "clean", split="validation")
+
+    audio_array = ds[0]["audio"]["array"]
+
+    input_features = processor(audio_array, return_tensors="pt").input_features 
+
+    # generate token ids
+    predicted_ids = model.generate(input_features)
+
+    # decode token ids to text
+    transcription = processor.batch_decode(predicted_ids, skip_special_tokens=True)
 
     print(transcription)
 
@@ -85,7 +109,7 @@ def detect_and_sample(show_plot: bool=False) -> np.array:
         plt.plot(full_sample)
         plt.show()
 
-    return full_sample
+    return np.array(full_sample, dtype='float32')  # Conver to np array to match Hugging Face example.
 
 def read_audio_stream(stream, read_time_s: float=.1, chunk_size: int=1024) -> np.array:
 
@@ -137,6 +161,10 @@ def transcribe_audio(audio_array, model, processor) -> list:
 
     # Tokenize.
     input_values = processor(audio_array, return_tensors="pt", padding="longest", sampling_rate=SAMPLING_RATE).input_values  # Batch size 1.
+    # Just the processor command returns a dictionary with a single key: "input_values" which is a tensor with shape [1, 12288]
+    # or really [1, the length of the audio_array]. The "padding" parameter doesn't seem to do anything.
+
+    # print(f'Input Values Shape: {input_values.shape}')
 
     # Retrieve logits.
     logits = model(input_values).logits
@@ -147,11 +175,33 @@ def transcribe_audio(audio_array, model, processor) -> list:
 
     return transcription
 
-def main(run_time: float=10, show_plot: bool=False) -> None:
+def transcribe_audio_openai_whisper(audio_array, model, processor) -> list:
+
+    SAMPLING_RATE = 16000 # Standard, but should be same as in detect_and_sample().
+
+    # input_features = processor(audio_array, return_tensors="pt", sampling_rate=SAMPLING_RATE).input_features  # Batch size 1.
+    input_features = processor(audio_array, return_tensors="pt", sampling_rate=SAMPLING_RATE).input_features  # Batch size 1.
+    # Returns a dictionary with a single key: "input_features" which is a tensor with shape [1, 80, 3000]
+
+    # generate token ids
+    predicted_ids = model.generate(input_features, max_new_tokens=20)
+    # logits = model(input_features).logits
+    # predicted_ids2 = torch.argmax(logits, dim=-1)
+
+    # decode token ids to text
+    transcription = processor.batch_decode(predicted_ids, skip_special_tokens=True)
+
+    return transcription
+
+def main(run_time: float=10, show_plot: bool=False, stop_word: str='stop') -> None:
 
     # Load model and tokenizer.
-    processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base-960h")
-    model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-base-960h")
+    # processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base-960h")
+    # model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-base-960h")
+
+    processor = WhisperProcessor.from_pretrained("openai/whisper-tiny.en")
+    model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny.en")
+
 
     start_time = time.time()
 
@@ -161,14 +211,17 @@ def main(run_time: float=10, show_plot: bool=False) -> None:
 
         data = detect_and_sample(show_plot=show_plot)
 
-        transcription = transcribe_audio(data, model=model, processor=processor)
+        # transcription = transcribe_audio(data, model=model, processor=processor)
+        transcription = transcribe_audio_openai_whisper(data, model=model, processor=processor)
 
         print(transcription[0])
+
+        if transcription[0] == stop_word.upper():
+            break
 
     return
 
 
 # MAIN:
 main(run_time=100, show_plot=False)
-
-
+# working_test()
