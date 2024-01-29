@@ -1,6 +1,7 @@
 import numpy as np
 import pyaudio
-import time
+import wave
+import matplotlib.pyplot as plt
 
 
 class Audio:
@@ -13,44 +14,61 @@ class Audio:
         Default location is wherever stuff is being run.
 
     Conceptually, there should only be 1 stream open at a time.
+    Assuming that you will always start this by recording some audio.
     '''
 
-    def __init__(self, data: np.array=None):
+    def __init__(self):
 
-        self.data = data
+        self.data = None
         
         self.noise_floor = None
 
         self._pyaudio_obj = None
         self._stream = None
 
+        self.audio_params = None
+
     def _open_stream(
         self,
-        channels: int=1,
         rate_hz: int=16000,
-        frame_count: int=1024,
-        audio_format: int=pyaudio.paInt16) -> pyaudio.PyAudio:
+        channels: int=1,
+        frames_per_buffer: int=1024,
+        audio_format: int=pyaudio.paInt16) -> None:
         '''
         Opens an audio stream for recording using pyaudio.
 
         channels: 1 is mono, 2 is stereo.
         rate_hz: Recording rate - 16k is pretty standard for a lot of applications. 
-        frame_count: TODO. Number of frames per buffer???
         audio_format: TODO. 
+        frames_per_buffer: parameter for managing the trade-off between audio processing
+            latency and overhead. When audio data is read from or written to the stream, 
+            it is done in chunks of this buffer size. A smaller buffer size means that 
+            audio data is transferred more frequently with lower latency but at potentially
+            higher processing overhead, as the system has to handle more buffers per unit time.
+            Conversely, a larger buffer size reduces the processing overhead (since there 
+            are fewer buffers to handle) but increases the latency, which might not be 
+            suitable for real-time audio processing tasks.
         '''
 
         self._pyaudio_obj = pyaudio.PyAudio()
 
         self._stream = self._pyaudio_obj.open(
-            format=audio_format,
-            channels=channels,
-            rate=rate_hz,
-            input=True,
-            frames_per_buffer=frame_count)
+            input=True,  # Tells the stream you are opening to record data.
+            rate=rate_hz,  # Sample Rate.
+            channels=channels,  # If not set, this should default to the recording device's default.
+            frames_per_buffer=frames_per_buffer,
+            format=audio_format)
+        
+        # Create a params structure so that even after the audio is done
+        # recording and the stream is closed, these properties will be available.
+        self.audio_params = {
+            'rate_hz': rate_hz,
+            'channels': channels,
+            'format': audio_format}
         
         return
     
-    def _close_stream(self) -> bool:
+    def _close_stream(self) -> None:
         '''
         Cleanly close the stream and the PyAudio object from which the stream originated.
         '''
@@ -60,9 +78,9 @@ class Audio:
         self._stream.close()
         self._pyaudio_obj.terminate()
 
-        return True
+        return
 
-    def _read_stream(self, read_time_s: float=.1, frame_count: int=1024) -> np.array:
+    def _read_stream(self, read_time_s: float=.5) -> np.array:
         '''
         Reads an open audio stream to record and store sound levels into a numpy array.
 
@@ -73,18 +91,13 @@ class Audio:
             and then reading with a different. That's a TODO.
         '''
 
-        full_data = []
+        # Given stream collection rate and total time needed, calculate frames to read.
+        frames_to_read = int(self._stream._rate * read_time_s)
 
-        start_time = time.time()
+        raw_sample = self._stream.read(frames_to_read)
+        numeric_sample = np.double(np.frombuffer(raw_sample, dtype=np.int16))  # Converts some binary buffer obj to numpy array.
 
-        # Keep reading blocks of data until the time is up.
-        while (time.time() - start_time) < read_time_s:
-
-            raw_sample = self._stream.read(frame_count)  # Time to read frame_count is approx (1/SAMPLE_RATE * frame_count) seconds.
-            num_sample = np.double(np.frombuffer(raw_sample, dtype=np.int16))  # Converts some binary buffer obj to numpy array.
-            full_data.extend(num_sample)  # Tacks on the data to the accumulating total sample.
-
-        return full_data    
+        return numeric_sample
     
     def detect_audio():
         '''
@@ -103,9 +116,9 @@ class Audio:
         time_s: time to record sample for in seconds.
         '''
 
-        stream = self._open_stream()
-        self.data = self._read_stream(stream=stream, read_time_s=time_s)
-        stream.close()
+        self._open_stream()
+        self.data = self._read_stream(read_time_s=time_s)
+        self._close_stream()
 
         return
 
@@ -149,5 +162,53 @@ class Audio:
 
         time_s: time to record in seconds to calculate average noise.
         '''
+
+        self.record(time_s=time_s)
+
+        return
+    
+    def plot(self):
+        '''
+        Plots current data. Since plot objects tend to freeze up the system until they are closed, 
+        plot will create a plot and save it as a .png without ever actually showing it to screen. 
+        '''
+
+        if self.data is None:
+            raise ValueError('Must have data to plot!')
+        
+        time_axis = np.arange(len(self.data)) / sample_rate
+
+        # Plotting
+        plt.figure(figsize=(10, 4))  # Optional: Adjust the figure size
+        plt.plot(time_axis, self.data)
+        plt.title("Audio Signal")
+        plt.xlabel("Time (seconds)")
+        plt.ylabel("Amplitude")
+        plt.grid(True)
+
+        # Save the plot as a PNG file
+        plt.savefig("audio_signal.png")
+    
+    def save_wav(self, save_path: str='audio.wav'):
+        '''
+        Saves the current data to a .wav file.
+
+        save_path: full file path to .wav file in save location.
+        '''
+        
+        if self.data is None:
+            raise ValueError('Must have data to save as .wav file!')
+        if save_path is not None and not save_path.endswith('.wav'):
+            raise ValueError('"save_path" must be a .wav file!')
+        
+        byte_data = self.data.tobytes()  # Convert to bytes.
+
+        wav_data = wave.open(save_path, 'wb')
+        wav_data.setnchannels(self._stream._channels)
+        wav_data.setsampwidth(self._pyaudio_obj.get_sample_size(self._stream._format))
+        wav_data.setframerate(self._stream._rate)
+        # wav_data.writeframes(b''.join(frames))
+        wav_data.writeframes(byte_data)
+        wav_data.close()
 
         return
