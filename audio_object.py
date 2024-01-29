@@ -20,13 +20,18 @@ class Audio:
     def __init__(self):
 
         self.data = None
-        
-        self.noise_floor = None
+        self.raw_bytes = None
 
         self._pyaudio_obj = None
         self._stream = None
 
-        self.audio_params = None
+        self.rate_hz = None
+        self.channels = None
+        # self.format = None
+        self.length_s = None
+        self.noise_floor = None
+
+        self.frame_count = None
 
     def _open_stream(
         self,
@@ -59,13 +64,9 @@ class Audio:
             frames_per_buffer=frames_per_buffer,
             format=audio_format)
         
-        # Create a params structure so that even after the audio is done
-        # recording and the stream is closed, these properties will be available.
-        self.audio_params = {
-            'rate_hz': rate_hz,
-            'channels': channels,
-            'format': audio_format}
-        
+        self.rate_hz = rate_hz
+        self.channels = channels
+
         return
     
     def _close_stream(self) -> None:
@@ -84,20 +85,24 @@ class Audio:
         '''
         Reads an open audio stream to record and store sound levels into a numpy array.
 
+        Ideally, the size of numeric data would be exactly equal to the sample rate / record time.
+        But since audio is recorded in buffer chunks (frames per buffer), you do an
+        approximation of how many buffers of frames_per_buffer do I need to get close to
+        my required read_time_s total data. This result is currently ceilinged to avoid the scenario
+        where you need less than 1 total buffer. But there's probably an argument for flooring it
+        or rounding it instead.
+
         read_time_s: the total time to read the stream in seconds.
-        frame_count: The chunk size of how many frames to read at a time. It's possible that this is
-            somewhat dependent on the audio stream which is initialized with a "frames_per_buffer"
-            parameter. I haven't tested trying to open an audio stream with one type of frame count
-            and then reading with a different. That's a TODO.
         '''
 
-        # Given stream collection rate and total time needed, calculate frames to read.
-        frames_to_read = int(self._stream._rate * read_time_s)
+        numeric_data = []
+        for _ in range(0, int(np.ceil(self.rate_hz / self._stream._frames_per_buffer * read_time_s))):
+            raw_buffer = self._stream.read(self._stream._frames_per_buffer)
+            numeric_data.extend(np.frombuffer(raw_buffer, dtype=np.int16))  # TODO: does dtype have to match param "format" of sample?
 
-        raw_sample = self._stream.read(frames_to_read)
-        numeric_sample = np.double(np.frombuffer(raw_sample, dtype=np.int16))  # Converts some binary buffer obj to numpy array.
+        numeric_data = np.array(numeric_data)  # Convert list to pure numpy array.
 
-        return numeric_sample
+        return numeric_data
     
     def detect_audio():
         '''
@@ -109,7 +114,7 @@ class Audio:
 
         return
 
-    def record(self, time_s: float):
+    def record(self, time_s: float=3):
         '''
         Record an audio sample for X seconds. Saves recorded sample into self.data.
 
@@ -119,6 +124,8 @@ class Audio:
         self._open_stream()
         self.data = self._read_stream(read_time_s=time_s)
         self._close_stream()
+
+        self.length_s = time_s
 
         return
 
@@ -167,7 +174,7 @@ class Audio:
 
         return
     
-    def plot(self):
+    def plot(self, save_path: str='audio.png'):
         '''
         Plots current data. Since plot objects tend to freeze up the system until they are closed, 
         plot will create a plot and save it as a .png without ever actually showing it to screen. 
@@ -175,11 +182,13 @@ class Audio:
 
         if self.data is None:
             raise ValueError('Must have data to plot!')
+        if save_path is not None and not save_path.endswith('.png'):
+            raise ValueError('"save_path" must be a .png file!')
         
-        time_axis = np.arange(len(self.data)) / sample_rate
+        time_axis = np.arange(len(self.data)) / self.rate_hz
 
         # Plotting
-        plt.figure(figsize=(10, 4))  # Optional: Adjust the figure size
+        # plt.figure(figsize=(10, 4))  # Optional: Adjust the figure size
         plt.plot(time_axis, self.data)
         plt.title("Audio Signal")
         plt.xlabel("Time (seconds)")
@@ -187,7 +196,7 @@ class Audio:
         plt.grid(True)
 
         # Save the plot as a PNG file
-        plt.savefig("audio_signal.png")
+        plt.savefig(save_path)
     
     def save_wav(self, save_path: str='audio.wav'):
         '''
