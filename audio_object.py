@@ -187,16 +187,15 @@ class Audio:
         
         time_axis = np.arange(len(self.data)) / self.rate_hz
 
-        # Plotting
-        # plt.figure(figsize=(10, 4))  # Optional: Adjust the figure size
+        plt.figure()
         plt.plot(time_axis, self.data)
-        plt.title("Audio Signal")
-        plt.xlabel("Time (seconds)")
-        plt.ylabel("Amplitude")
-        plt.grid(True)
+        plt.xlabel('Time (sec)')
+        plt.ylabel('Amplitude')
+        plt.title('Audio Signal')
 
-        # Save the plot as a PNG file
+        # Save the plot as a PNG file.
         plt.savefig(save_path)
+        plt.close()  # Close the plot to free up memory.
     
     def save_wav(self, save_path: str='audio.wav'):
         '''
