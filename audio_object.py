@@ -38,7 +38,7 @@ class Audio:
         rate_hz: int=16000,
         channels: int=1,
         frames_per_buffer: int=1024,
-        audio_format: int=pyaudio.paInt16) -> None:
+        audio_format: int=pyaudio.paFloat32) -> None: #paInt16
         '''
         Opens an audio stream for recording using pyaudio.
 
@@ -98,7 +98,7 @@ class Audio:
         numeric_data = []
         for _ in range(0, int(np.ceil(self.rate_hz / self._stream._frames_per_buffer * read_time_s))):
             raw_buffer = self._stream.read(self._stream._frames_per_buffer)
-            numeric_data.extend(np.frombuffer(raw_buffer, dtype=np.int16))  # TODO: does dtype have to match param "format" of sample?
+            numeric_data.extend(np.frombuffer(raw_buffer, dtype=np.float32))  # int16 TODO: does dtype have to match param "format" of sample?
 
         numeric_data = np.array(numeric_data)  # Convert list to pure numpy array.
 
@@ -177,7 +177,10 @@ class Audio:
     def plot(self, save_path: str='audio.png'):
         '''
         Plots current data. Since plot objects tend to freeze up the system until they are closed, 
-        plot will create a plot and save it as a .png without ever actually showing it to screen. 
+        plot will create a plot and save it as a .png without ever actually showing it to screen.
+
+        TODO: Would be nice to make plot interactive so I could zoom in on sections
+        instead of getting the plot all condensed at once.
         '''
 
         if self.data is None:

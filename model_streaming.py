@@ -267,3 +267,22 @@ if __name__ == '__main__':
     # working_test_openai_whisper()
     main(run_time=30, model_type='whisper')
     
+
+'''
+Note from https://huggingface.co/docs/transformers/model_doc/whisper#transformers.WhisperProcessor
+class transformers.WhisperForAudioClassification
+input_features (torch.FloatTensor of shape (batch_size, feature_size, 
+sequence_length)) — Float values mel features extracted from the raw 
+speech waveform. Raw speech waveform can be obtained by loading a .flac 
+or .wav audio file into an array of type List[float] or a numpy.ndarray, 
+e.g. via the soundfile library (pip install soundfile). To prepare the 
+array into input_features, the AutoFeatureExtractor should be used for 
+extracting the mel features, padding and conversion into a tensor of 
+type torch.FloatTensor.
+
+This implies that you should read a wav file into a float numpy array.
+Odd because Chat GPT said a .wav is often int24, not a float, so I'm
+wondering if that screws up the data when you read it in. Can you open
+a pyaudio stream in float32 format, and then typecast it to int24 to 
+save it as a wav? Do I ignore .wav and save stuff as a .flac instead?
+'''
