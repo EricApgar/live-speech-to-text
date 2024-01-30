@@ -1,6 +1,6 @@
 import numpy as np
 import pyaudio
-import wave
+import soundfile as sf
 import matplotlib.pyplot as plt
 
 
@@ -200,26 +200,22 @@ class Audio:
         plt.savefig(save_path)
         plt.close()  # Close the plot to free up memory.
     
-    def save_wav(self, save_path: str='audio.wav'):
+    def save_as(self, save_path: str='audio.flac'):
         '''
-        Saves the current data to a .wav file.
+        Saves the current data to a .flac file.
 
-        save_path: full file path to .wav file in save location.
+        save_path: full file path to .flac file in save location.
         '''
         
         if self.data is None:
             raise ValueError('Must have data to save as .wav file!')
-        if save_path is not None and not save_path.endswith('.wav'):
+        if save_path is not None and not save_path.endswith('.flac'):
             raise ValueError('"save_path" must be a .wav file!')
         
-        byte_data = self.data.tobytes()  # Convert to bytes.
-
-        wav_data = wave.open(save_path, 'wb')
-        wav_data.setnchannels(self._stream._channels)
-        wav_data.setsampwidth(self._pyaudio_obj.get_sample_size(self._stream._format))
-        wav_data.setframerate(self._stream._rate)
-        # wav_data.writeframes(b''.join(frames))
-        wav_data.writeframes(byte_data)
-        wav_data.close()
+        sf.write(
+            file=save_path,
+            data=self.data,
+            samplerate=self.rate_hz,
+            subtype='PCM_24')
 
         return
