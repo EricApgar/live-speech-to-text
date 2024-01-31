@@ -33,7 +33,7 @@ class Audio:
 
         self.frame_count = None
 
-    def record(self, time_s: float=3.0, set_data: bool=True) -> None:
+    def record(self, time_s: float=3.0, set_data: bool=True) -> np.array:
         '''
         Record an audio sample for X seconds. Saves recorded sample into self.data.
 
@@ -87,11 +87,11 @@ class Audio:
 
         self._close_stream()
 
-        self.data = full_sample  # Set the main data as the recorded sample.
+        self.data = np.array(full_sample)  # Set the main data as the recorded sample.
 
         return
     
-    def calc_noise_level(self, time_s: float=3.0, percentile: float=80.0) -> float:
+    def set_noise_level(self, time_s: float=3.0, percentile: float=80.0) -> None:
         '''
         Read in a short audio clip and try to determine the current level of background noise.
         This is the numerical value for a signal where values over this limit are probably signal
@@ -111,10 +111,9 @@ class Audio:
         time_s: time to record in seconds to calculate average noise.
         '''
 
-        # data = self.record(time_s=time_s, set_data=False)
-        data = self.record(time_s=time_s)
+        data = self.record(time_s=time_s, set_data=False)
 
-        # self.noise_level = np.percentile(abs(data), percentile)
+        self.noise_level = np.percentile(abs(data), percentile)
         
         return
     
