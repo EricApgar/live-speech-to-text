@@ -6,6 +6,8 @@ import pyaudio
 import time
 import numpy as np
 
+from audio_object import Audio
+
 # For Debugging.
 from scipy.io.wavfile import write as wav_write
 import pathlib
@@ -243,7 +245,10 @@ def main(
 
         print('Waiting for sound...')
 
-        data = detect_and_sample(show_plot=show_plot)
+        # data = detect_and_sample(show_plot=show_plot)
+        A = Audio()
+        A.record_activity()
+        data = A.data
 
         if model_type == 'facebook':
             transcription = transcribe_audio(data, model=model, processor=processor)
