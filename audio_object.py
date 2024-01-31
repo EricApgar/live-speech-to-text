@@ -33,7 +33,7 @@ class Audio:
 
         self.frame_count = None
 
-    def record(self, time_s: float=3, set_data: bool=True) -> None:
+    def record(self, time_s: float=3.0, set_data: bool=True) -> None:
         '''
         Record an audio sample for X seconds. Saves recorded sample into self.data.
 
@@ -111,9 +111,10 @@ class Audio:
         time_s: time to record in seconds to calculate average noise.
         '''
 
-        data = self.record(time_s=time_s, set_data=False)
+        # data = self.record(time_s=time_s, set_data=False)
+        data = self.record(time_s=time_s)
 
-        self.noise_level = np.percentile(abs(data), percentile)
+        # self.noise_level = np.percentile(abs(data), percentile)
         
         return
     
