@@ -27,11 +27,140 @@ class Audio:
 
         self.rate_hz = None
         self.channels = None
-        # self.format = None
+
         self.length_s = None
         self.noise_level = None
 
         self.frame_count = None
+
+    def record(self, time_s: float=3, set_data: bool=True) -> None:
+        '''
+        Record an audio sample for X seconds. Saves recorded sample into self.data.
+
+        time_s: time to record sample for in seconds.
+        set_data: whether or not to keep the data. Sometimes recording is for a temp calculation.
+        '''
+
+        self._open_stream()
+        data = self._read_stream(read_time_s=time_s)
+        if set_data:
+            self.data = data
+        self._close_stream()
+
+        self.length_s = time_s
+
+        return data
+    
+    def record_activity(self, max_collect_s: float=10.0, dwell_s: float=.2) -> None:
+        '''
+        Opens an audio stream and tries to collect the next full sample of audio.
+        Automatically cuts off the stream once too much time has passed.
+        Limits the collected audio to the start and stop of activity.
+        Does some calculation to only record and keep audio if it counts as activity.
+
+        max_collect_s: maximum time to collect data before timing out (even if sample is still active).
+            Too long and the ASR model could have difficulty predicting on such a large sample.
+            Realistically, the timeout will be determine more by dwell_s (since a period of dwell_s
+            that is silent will trigger a break).
+        dwell_s: dwell time (in seconds) to collect a micro sample to analyze for activity.
+        '''
+
+        ready_for_model = False  # Initialize to no good sample found.
+        
+        self._open_stream()
+
+        full_sample = []
+        
+        start_time = time.time()  # Start clock.
+        while (time.time() - start_time) < max_collect_s:
+            
+            sample = self._read_stream(read_time_s=dwell_s)
+
+            is_active, ends_dead = self._is_active(audio_array=sample)
+
+            if is_active:  # Has something that looks like non-background sound.
+                full_sample.extend(sample)  # Add snippet to the full sample array.
+                ready_for_model = True
+
+            if ready_for_model and ends_dead:  # Means dead zone found after a sample with activity.
+                break
+
+        self._close_stream()
+
+        self.data = full_sample  # Set the main data as the recorded sample.
+
+        return
+    
+    def calc_noise_level(self, time_s: float=3.0, percentile: float=80.0) -> float:
+        '''
+        Read in a short audio clip and try to determine the current level of background noise.
+        This is the numerical value for a signal where values over this limit are probably signal
+        and values under it are probably noise. 
+
+        This is intended to be used by other methods that are trying to determine the activity level
+        of a sound clip, specifically whether a sample of audio is considered "active" by comparing
+        how much of the audio is above the level of what was considered ambient noise.
+
+        This is meant to be run when there is only "ambient" background noise present and not
+        anything active (like someone talking).
+
+        Technique: Create a distribution of the absolute value of all values in the sample and 
+        draw the line at the Xth percentile. Making a vague assumption that if X% of the noise 
+        signal is below this level then its a decent limit.
+
+        time_s: time to record in seconds to calculate average noise.
+        '''
+
+        data = self.record(time_s=time_s, set_data=False)
+
+        self.noise_level = np.percentile(abs(data), percentile)
+        
+        return
+    
+    def plot(self, save_path: str='audio.png') -> None:
+        '''
+        Plots current data. Since plot objects tend to freeze up the system until they are closed, 
+        plot will create a plot and save it as a .png without ever actually showing it to screen.
+
+        TODO: Would be nice to make plot interactive so I could zoom in on sections
+        instead of getting the plot all condensed at once.
+        '''
+
+        if self.data is None:
+            raise ValueError('Must have data to plot!')
+        if save_path is not None and not save_path.endswith('.png'):
+            raise ValueError('"save_path" must be a .png file!')
+        
+        time_axis = np.arange(len(self.data)) / self.rate_hz
+
+        plt.figure()
+        plt.plot(time_axis, self.data)
+        plt.xlabel('Time (sec)')
+        plt.ylabel('Amplitude')
+        plt.title('Audio Signal')
+
+        # Save the plot as a PNG file.
+        plt.savefig(save_path)
+        plt.close()  # Close the plot to free up memory.
+    
+    def save_as(self, save_path: str='audio.flac') -> None:
+        '''
+        Saves the current data to a .flac file.
+
+        save_path: full file path to .flac file in save location.
+        '''
+        
+        if self.data is None:
+            raise ValueError('Must have data to save as .wav file!')
+        if save_path is not None and not save_path.endswith('.flac'):
+            raise ValueError('"save_path" must be a .wav file!')
+        
+        sf.write(
+            file=save_path,
+            data=self.data,
+            samplerate=self.rate_hz)  # subtype='PCM_24'
+
+        return
 
     def _open_stream(
         self,
@@ -106,64 +235,6 @@ class Audio:
 
         return numeric_data
     
-    def record_activity(self, max_collect_s: float=10.0, dwell_s: float=.2) -> None:
-        '''
-        Opens an audio stream and tries to collect the next full sample of audio.
-        Automatically cuts off the stream once too much time has passed.
-        Limits the collected audio to the start and stop of activity.
-        Does some calculation to only record and keep audio if it counts as activity.
-
-        max_collect_s: maximum time to collect data before timing out (even if sample is still active).
-            Too long and the ASR model could have difficulty predicting on such a large sample.
-            Realistically, the timeout will be determine more by dwell_s (since a period of dwell_s
-            that is silent will trigger a break).
-        dwell_s: dwell time (in seconds) to collect a micro sample to analyze for activity.
-        '''
-
-        ready_for_model = False  # Initialize to no good sample found.
-        
-        self._open_stream()
-
-        full_sample = []
-        
-        start_time = time.time()  # Start clock.
-        while (time.time() - start_time) < max_collect_s:
-            
-            sample = self._read_stream(read_time_s=dwell_s)
-
-            is_active, ends_dead = self._is_active(audio_array=sample)
-
-            if is_active:  # Has something that looks like non-background sound.
-                full_sample.extend(sample)  # Add snippet to the full sample array.
-                ready_for_model = True
-
-            if ready_for_model and ends_dead:  # Means dead zone found after a sample with activity.
-                break
-
-        self._close_stream()
-
-        self.data = full_sample  # Set the main data as the recorded sample.
-
-        return
-
-    def record(self, time_s: float=3, set_data: bool=True) -> None:
-        '''
-        Record an audio sample for X seconds. Saves recorded sample into self.data.
-
-        time_s: time to record sample for in seconds.
-        set_data: whether or not to keep the data. Sometimes recording is for a temp calculation.
-        '''
-
-        self._open_stream()
-        data = self._read_stream(read_time_s=time_s)
-        if set_data:
-            self.data = data
-        self._close_stream()
-
-        self.length_s = time_s
-
-        return data
-
     def _is_active(self, audio_array: np.array, active_percent: float=10.0, look_back_percent: float=25.0) -> bool:
         '''
         Determine if an audio sample has any activity, and if it ends in a dead zone. 
@@ -202,73 +273,3 @@ class Audio:
 
         return is_active, ends_dead
     
-    def calc_noise_level(self, time_s: float=3.0, percentile: float=80.0) -> float:
-        '''
-        Read in a short audio clip and try to determine the current level of background noise.
-        This is the numerical value for a signal where values over this limit are probably signal
-        and values under it are probably noise. 
-
-        This is intended to be used by other methods that are trying to determine the activity level
-        of a sound clip, specifically whether a sample of audio is considered "active" by comparing
-        how much of the audio is above the level of what was considered ambient noise.
-
-        This is meant to be run when there is only "ambient" background noise present and not
-        anything active (like someone talking).
-
-        Technique: Create a distribution of the absolute value of all values in the sample and 
-        draw the line at the Xth percentile. Making a vague assumption that if X% of the noise 
-        signal is below this level then its a decent limit.
-
-        time_s: time to record in seconds to calculate average noise.
-        '''
-
-        data = self.record(time_s=time_s, set_data=False)
-
-        self.noise_level = np.percentile(abs(data), percentile)
-        
-        return
-    
-    def plot(self, save_path: str='audio.png') -> None:
-        '''
-        Plots current data. Since plot objects tend to freeze up the system until they are closed, 
-        plot will create a plot and save it as a .png without ever actually showing it to screen.
-
-        TODO: Would be nice to make plot interactive so I could zoom in on sections
-        instead of getting the plot all condensed at once.
-        '''
-
-        if self.data is None:
-            raise ValueError('Must have data to plot!')
-        if save_path is not None and not save_path.endswith('.png'):
-            raise ValueError('"save_path" must be a .png file!')
-        
-        time_axis = np.arange(len(self.data)) / self.rate_hz
-
-        plt.figure()
-        plt.plot(time_axis, self.data)
-        plt.xlabel('Time (sec)')
-        plt.ylabel('Amplitude')
-        plt.title('Audio Signal')
-
-        # Save the plot as a PNG file.
-        plt.savefig(save_path)
-        plt.close()  # Close the plot to free up memory.
-    
-    def save_as(self, save_path: str='audio.flac') -> None:
-        '''
-        Saves the current data to a .flac file.
-
-        save_path: full file path to .flac file in save location.
-        '''
-        
-        if self.data is None:
-            raise ValueError('Must have data to save as .wav file!')
-        if save_path is not None and not save_path.endswith('.flac'):
-            raise ValueError('"save_path" must be a .wav file!')
-        
-        sf.write(
-            file=save_path,
-            data=self.data,
-            samplerate=self.rate_hz)  # subtype='PCM_24'
-
-        return
