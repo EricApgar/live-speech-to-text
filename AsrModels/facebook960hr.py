@@ -11,7 +11,7 @@ class Facebook960hrModel():
         self.processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base-960h")
         self.model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-base-960h")
 
-    def transcribe_audio(self, audio_array: np.array, sample_rate_hz: int) -> list:
+    def transcribe_audio_array(self, audio_array: np.array, sample_rate_hz: int) -> list:
         '''
         Returns a list of strings (or really a single string in a list) of the
         transcribed audio signal's text.

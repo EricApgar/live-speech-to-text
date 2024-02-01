@@ -37,7 +37,7 @@ print('Done.\n')
 
 print('Transcribing audio array...')
 start_time = time.time()
-text = model.transcribe_audio(A.data, A.rate_hz)
+text = model.transcribe_audio_array(A.data, A.rate_hz)
 print(f'Trasncription: {text}')
 print(f'Done in {time.time() - start_time:.2f} sec.\n')
 
@@ -56,7 +56,7 @@ print('Done.\n')
 
 print('Transcribing audio array...')
 start_time = time.time()
-text = model.transcribe_audio(A.data, A.rate_hz)
+text = model.transcribe_audio_array(A.data, A.rate_hz)
 print(f'Trasncription: {text}')
 print(f'Done in {time.time() - start_time:.2f} sec.\n')
 
