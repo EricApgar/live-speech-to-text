@@ -151,7 +151,6 @@ class Audio:
         plt.ylabel('Amplitude')
         plt.title('Audio Signal')
 
-        # Save the plot as a PNG file.
         plt.savefig(save_path)
         plt.close()  # Close the plot to free up memory.
     
@@ -171,7 +170,7 @@ class Audio:
         sf.write(
             file=save_path,
             data=self.data,
-            samplerate=self.rate_hz)  # subtype='PCM_24'
+            samplerate=self.rate_hz)
 
         return
 
@@ -265,10 +264,6 @@ class Audio:
 
         if self.noise_level is None:
             raise ValueError('Must calculate noise level first!')
-
-        SOUND_THRESHOLD = 1000  # Anything below this is considered background noise. Above is considered "active".
-        PERCENT_ACTIVE_REQUIRED = 10  # This percent samples over the SOUND_THRESHOLD is considered an "active" clip. 
-        PERCENT_LOOK_BACK = 25  # If there no above-noise-threshold elements in this "back percent" of the sample, its the end of the clip.
 
         is_active = False  # Initial state for sample has active points.
         ends_dead = True  # Initial for the clip ending in a non-active state.
