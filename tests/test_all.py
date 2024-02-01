@@ -10,53 +10,61 @@ from AsrModels.facebook960hr import Facebook960hrModel
 from AsrModels.openAiWhisper import OpenAiWhisperModel
 
 import time
+import platform
+
 
 A = Audio()
 
 print('Setting noise level...')
 A.set_noise_level()
-print('Done.')
+print('Done.\n')
 
 print('Recording sample...')
 A.record()
-print('Done.')
+print('Done.\n')
 
 print('Recording active sample...')
 A.record_activity()
-print('Done.')
+print('Done.\n')
 
 print('Saving active sample...')
 A.save_as('audio.flac')
-print('Done.')
+print('Done.\n')
 
 print('Loading Facebook model...')
 model = Facebook960hrModel()
-print('Done.')
+print('Done.\n')
 
 print('Transcribing audio array...')
 start_time = time.time()
 text = model.transcribe_audio(A.data, A.rate_hz)
 print(f'Trasncription: {text}')
-print(f'Done in {time.time() - start_time:.2f} sec.')
+print(f'Done in {time.time() - start_time:.2f} sec.\n')
 
-print('Transcribing audio file...')
-start_time = time.time()
-text = model.transcribe_audio_file('audio.flac')
-print(f'Trasncription: {text}')
-print(f'Done in {time.time() - start_time:.2f} sec.')
+# NOTE: Transcribing audio files using transformers pipeline requires ffmpeg to be installed.
+# This is easy on linux, annoying (I haven't bothered) on Windows.
+if not platform.system() == 'Windows':
+    print('Transcribing audio file...')
+    start_time = time.time()
+    text = model.transcribe_audio_file(audio_file='audio.flac')
+    print(f'Trasncription: {text}')
+    print(f'Done in {time.time() - start_time:.2f} sec.\n')
 
 print('Loading OpenAi Whisper model...')
 model = OpenAiWhisperModel()
-print('Done.')
+print('Done.\n')
 
 print('Transcribing audio array...')
 start_time = time.time()
 text = model.transcribe_audio(A.data, A.rate_hz)
 print(f'Trasncription: {text}')
-print(f'Done in {time.time() - start_time:.2f} sec.')
+print(f'Done in {time.time() - start_time:.2f} sec.\n')
 
-print('Transcribing audio file...')
-start_time = time.time()
-text = model.transcribe_audio_file('audio.flac')
-print(f'Trasncription: {text}')
-print(f'Done in {time.time() - start_time:.2f} sec.')
+# NOTE: Transcribing audio files using transformers pipeline requires ffmpeg to be installed.
+# This is easy on linux, annoying (I haven't bothered) on Windows.
+if not platform.system() == 'Windows':
+    print('Transcribing audio file...')
+    start_time = time.time()
+    text = model.transcribe_audio_file(audio_file='audio.flac')
+    print(f'Trasncription: {text}')
+    print(f'Done in {time.time() - start_time:.2f} sec.\n')

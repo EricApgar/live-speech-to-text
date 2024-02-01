@@ -35,6 +35,7 @@ class OpenAiWhisperModel():
 
         return transcription
     
+    @staticmethod
     def transcribe_audio_file(audio_file: str):
         '''
         Uses the transformers pipeline to transcribe audio files.
