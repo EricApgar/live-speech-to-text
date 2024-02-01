@@ -7,15 +7,21 @@ import time
 
 class Audio:
     '''
-    Easily record sound for X seconds.
-    Handle recorded sound data as numpy array.
-    Save data as a .wav file.
-    Plot data.
-        Save plot as .png at specified location.
-        Default location is wherever stuff is being run.
+    A manager for recording and manipulating audio data.
+
+    The main goal is to be able to easily record sound clips for use
+    in doing Automatic Speech Recognition. 
+    
+    ---
+    Priorities:
+    1. Recording sound.
+    2. Quickly analyzing the activity levels
+    3. Being able to extract an active sound clip
+    from a longer period of time are the priorities.
 
     Conceptually, there should only be 1 stream open at a time.
-    Assuming that you will always start this by recording some audio.
+    The first thing that you will likely do after initializing this class
+    is record some audio.
     '''
 
     def __init__(self):
@@ -31,12 +37,11 @@ class Audio:
         self.length_s = None
         self.noise_level = None
 
-        self.frame_count = None
-
     def record(self, time_s: float=3.0, set_data: bool=True) -> np.array:
         '''
         Record an audio sample for X seconds. Saves recorded sample into self.data.
 
+        ---
         time_s: time to record sample for in seconds.
         set_data: whether or not to keep the data. Sometimes recording is for a temp calculation.
         '''
@@ -58,6 +63,7 @@ class Audio:
         Limits the collected audio to the start and stop of activity.
         Does some calculation to only record and keep audio if it counts as activity.
 
+        ---
         max_collect_s: maximum time to collect data before timing out (even if sample is still active).
             Too long and the ASR model could have difficulty predicting on such a large sample.
             Realistically, the timeout will be determine more by dwell_s (since a period of dwell_s
@@ -88,6 +94,7 @@ class Audio:
         self._close_stream()
 
         self.data = np.array(full_sample)  # Set the main data as the recorded sample.
+        self.length_s = len(self.data) / self.rate_hz
 
         return
     
@@ -102,12 +109,14 @@ class Audio:
         how much of the audio is above the level of what was considered ambient noise.
 
         This is meant to be run when there is only "ambient" background noise present and not
-        anything active (like someone talking).
+        anything active (like someone talking). To this end, it isn't called automatically anywhere
+        because that could throw off levels if you're not prepared. Call this manually.
 
         Technique: Create a distribution of the absolute value of all values in the sample and 
         draw the line at the Xth percentile. Making a vague assumption that if X% of the noise 
         signal is below this level then its a decent limit.
 
+        ---
         time_s: time to record in seconds to calculate average noise.
         '''
 
@@ -124,6 +133,9 @@ class Audio:
 
         TODO: Would be nice to make plot interactive so I could zoom in on sections
         instead of getting the plot all condensed at once.
+
+        ---
+        save_path: path to the audio plot file to save.
         '''
 
         if self.data is None:
@@ -147,6 +159,7 @@ class Audio:
         '''
         Saves the current data to a .flac file.
 
+        ---
         save_path: full file path to .flac file in save location.
         '''
         
@@ -171,6 +184,7 @@ class Audio:
         '''
         Opens an audio stream for recording using pyaudio.
 
+        ---
         channels: 1 is mono, 2 is stereo.
         rate_hz: Recording rate - 16k is pretty standard for a lot of applications. 
         audio_format: TODO. 
@@ -223,6 +237,7 @@ class Audio:
         where you need less than 1 total buffer. But there's probably an argument for flooring it
         or rounding it instead.
 
+        ---
         read_time_s: the total time to read the stream in seconds.
         '''
 
@@ -239,11 +254,13 @@ class Audio:
         '''
         Determine if an audio sample has any activity, and if it ends in a dead zone. 
 
+        ---
         audio_array: the audio signal to be analyzed.
         active_percent: if at least this percent of the signal is active, then the
             sample is considered an "active" sample.
-        look_back_percent: Look at the last X percent of the signal. If this is considered
-            to be non-active, then the sound sample "end_dead".
+        look_back_percent: Look at the last X percent of the signal. If there no 
+            above-noise-threshold elements in this "back percent" of the sample, its 
+            the end of the clip and the sound sample "end_dead".
         '''
 
         if self.noise_level is None:
