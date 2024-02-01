@@ -130,3 +130,5 @@ dmypy.json
 
 # Ignore temp .wav file.
 *.wav
+*.flac
+*.png
