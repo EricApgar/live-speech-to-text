@@ -14,6 +14,8 @@ Create a virtual environment. Then install from "requirements.txt".
 pip install -r requirements.txt
 ```
 
+### TODO: Add notes about what kind of models from Hugging Face will work based on the system requirements. For instance, the Facebook960hr model seems to be too big (94.4 million parameters) for the Raspberry Pi 4B in it's default configuration, but runs fine on a decent desktop PC.
+
 ## Linux:
 On linux (RPi), you might have to run:
 ```
