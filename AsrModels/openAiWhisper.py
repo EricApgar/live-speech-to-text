@@ -1,5 +1,6 @@
 from transformers import WhisperProcessor, WhisperForConditionalGeneration
 import numpy as np
+from transformers import pipeline
 
 
 class OpenAiWhisperModel():
@@ -9,7 +10,7 @@ class OpenAiWhisperModel():
         self.model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny.en")
         self.processor = WhisperProcessor.from_pretrained("openai/whisper-tiny.en")
 
-    def transcribe_audio(self, audio_array: np.array, sample_rate_hz: int, max_new_tokens: int=20) -> list:
+    def transcribe_audio_array(self, audio_array: np.array, sample_rate_hz: int, max_new_tokens: int=20) -> list:
         '''
         Returns a list of strings (or really a single string in a list) of the
         transcribed audio signal's text.
@@ -33,3 +34,17 @@ class OpenAiWhisperModel():
         transcription = self.processor.batch_decode(predicted_ids, skip_special_tokens=True)
 
         return transcription
+    
+    def transcribe_audio_file(audio_file: str):
+        '''
+        Uses the transformers pipeline to transcribe audio files.
+
+        audio_file: full file path to audio file.
+        '''
+
+        model = pipeline("automatic-speech-recognition", "openai/whisper-tiny")
+        transcription = model(audio_file)  # , chunk_length_s=30
+        # print(transcription["text"][:500])
+        # print(transcription["text"])
+
+        return transcription["text"]

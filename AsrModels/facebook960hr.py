@@ -1,6 +1,7 @@
 from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC
 import numpy as np
 import torch
+from transformers import pipeline
 
 
 class Facebook960hrModel():
@@ -41,3 +42,17 @@ class Facebook960hrModel():
         transcription = self.processor.batch_decode(predicted_ids)
 
         return transcription
+    
+    def transcribe_audio_file(audio_file: str):
+        '''
+        Uses the transformers pipeline to transcribe audio files.
+
+        audio_file: full file path to audio file.
+        '''
+
+        model = pipeline("automatic-speech-recognition", "facebook/wav2vec2-base-960h")
+        transcription = model(audio_file)  # , chunk_length_s=30
+        # print(transcription["text"][:500])
+        # print(transcription["text"])
+
+        return transcription["text"]

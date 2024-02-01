@@ -91,7 +91,7 @@ class Audio:
 
         return
     
-    def set_noise_level(self, time_s: float=3.0, percentile: float=80.0) -> None:
+    def set_noise_level(self, time_s: float=3.0, percentile: float=99.0) -> None:
         '''
         Read in a short audio clip and try to determine the current level of background noise.
         This is the numerical value for a signal where values over this limit are probably signal
