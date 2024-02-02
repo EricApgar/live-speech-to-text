@@ -3,6 +3,8 @@ import pyaudio
 import soundfile as sf
 import matplotlib.pyplot as plt
 import time
+import audioop
+from constants import get_sample_width
 
 
 class Audio:
@@ -36,6 +38,7 @@ class Audio:
 
         self.length_s = None
         self.noise_level = None
+        self.silence_threshold = None
 
     def record(self, time_s: float=3.0, set_data: bool=True) -> np.array:
         '''
@@ -98,6 +101,26 @@ class Audio:
 
         return
     
+    def record_activity_V2(self):
+
+        audio_array = []
+        num_silent_frames = 0
+        is_recording = False
+
+        self._open_stream(open_now=False)
+        self._stream.start_stream()  # Actually starts the open stream.
+
+        byte_width = get_sample_width(self._stream._format)
+        
+        while True:
+
+            rms = audioop.rms(audio_array, byte_width)  # Calculate RMS (avg signal strength).
+
+            # if rms < self.silence_threshold
+
+
+        return
+    
     def set_noise_level(self, time_s: float=3.0, percentile: float=99.0) -> None:
         '''
         Read in a short audio clip and try to determine the current level of background noise.
@@ -123,6 +146,11 @@ class Audio:
         data = self.record(time_s=time_s, set_data=False)
 
         self.noise_level = np.percentile(abs(data), percentile)
+
+        # byte_width = get_sample_width(self._stream._format)
+        # a = audioop.rms(data, byte_width)
+        
+        # self.silence_threshold
         
         return
     
@@ -179,7 +207,8 @@ class Audio:
         rate_hz: int=16000,
         channels: int=1,
         frames_per_buffer: int=1024,
-        audio_format: int=pyaudio.paFloat32) -> None: #paInt16
+        audio_format: int=pyaudio.paFloat32,
+        open_now: bool=True) -> None: #paInt16
         '''
         Opens an audio stream for recording using pyaudio.
 
@@ -194,7 +223,8 @@ class Audio:
             higher processing overhead, as the system has to handle more buffers per unit time.
             Conversely, a larger buffer size reduces the processing overhead (since there 
             are fewer buffers to handle) but increases the latency, which might not be 
-            suitable for real-time audio processing tasks.
+            suitable for real-time audio processing tasks. Values may need to be a power of 2?
+            GPT suggested 512 as an option.
         '''
 
         self._pyaudio_obj = pyaudio.PyAudio()
@@ -204,7 +234,8 @@ class Audio:
             rate=rate_hz,  # Sample Rate.
             channels=channels,  # If not set, this should default to the recording device's default.
             frames_per_buffer=frames_per_buffer,
-            format=audio_format)
+            format=audio_format,
+            start=open_now)
         
         self.rate_hz = rate_hz
         self.channels = channels
