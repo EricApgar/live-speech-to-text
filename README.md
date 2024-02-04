@@ -1,6 +1,9 @@
 # LiveSpeechToText
 Live speech to text transcription. Ambient sound is recorded and parsed into standalone words or phrases that are streamed to a voice model that will transcribe the sound to text. Works completely offline - no streaming to a service or external connections to websites or 3rd party services needed.
 
+# Running:
+tests/test_audio_object.py has a good run through of the Audio class and how to use it's various methods.
+
 # Requirements:
 
 ## Requires Python 3.7.8 to work. 
@@ -38,9 +41,10 @@ alsamixer
 and choosing the right soundcard for recording device using the F keys and menu options.
 
 ### TODO: Add instructions for recording and then playing a test .wav file.
+This would be using arecord.
 
 ## Windows:
-On Windows, there are a couple of pieces of functionality that won't work because they require the installation of another application. The only one I'm tracking is that Windows doesn't have the "ffmpeg" package. This means you wont be able to transcribe a sound file directly (i.e. point the model to a .flac and get a transcription). Recording audio and passing the raw audio array will still work.
+On Windows, there are a couple of pieces of functionality that won't work because they require the installation of another application. The only one I'm tracking is that Windows doesn't have the "ffmpeg" package. This means you wont be able to transcribe a sound file directly (i.e. point the model to a .flac and get a transcription) unless you have ffmpeg installed for Windows. All other functionality should still work.
 
 ---
 
@@ -342,13 +346,9 @@ Here are some steps to troubleshoot and potentially resolve this issue:
 
 These troubleshooting steps are aimed at isolating and resolving the issue with PyAudio initialization. The exact solution may depend on the specific configuration and environment of your Raspberry Pi.
 
-# Methods:
+# Technique:
 
-## 1. Stream sound samples to model (RECOMMENDED)
-
-### **Associated file:** model_streaming.py
-
-Summary: This is by far the best method. Run this file to start the program. Adjust the parameters at the bottom of the file to change the time it will run for.
+## 1. Stream sound samples to model
 
 * Record super short samples of sound (~.1 seconds in length).
 * Analyze each sample for exceeding a sound threshold above an adjustable limit.
