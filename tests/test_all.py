@@ -16,15 +16,19 @@ import platform
 A = Audio()
 
 print('Setting noise level...')
-A.set_noise_level()
+A.set_silence_threshold()
 print('Done.\n')
 
 print('Recording sample...')
 A.record()
 print('Done.\n')
 
+print('Plotting sample...')
+A.plot()
+print('Done.\n')
+
 print('Recording active sample...')
-A.record_activity()
+A.record_activity(max_sample_length_s=3)
 print('Done.\n')
 
 print('Saving active sample...')
