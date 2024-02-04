@@ -1,6 +1,5 @@
 from audio_object import Audio
 from AsrModels.openAiWhisper import OpenAiWhisperModel
-# from AsrModels.facebook960hr import Facebook960hrModel
 
 
 audio = Audio()
@@ -17,7 +16,7 @@ while True:
     
     text = model.transcribe_audio_array(audio_array=audio.data, sample_rate_hz=audio.rate_hz)
 
-    if text[0] != 'you':  # Fix for whisper model's default response for random noise.
+    if text[0] != ' you':  # Fix for whisper model's default response for random noise.
         print(text[0])
 
     if 'stop' in text[0].lower():
