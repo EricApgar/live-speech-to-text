@@ -60,7 +60,7 @@ class Audio:
         self,
         dwell_s: float=.1,
         silence_cutoff_s: float=.3,
-        max_sample_length_s: float=10.0,
+        max_sample_length_s: float=3.0,
         max_run_time_s: float=None) -> None:
         '''
         Opens an audio stream and tries to collect the next full sample of audio.
@@ -98,6 +98,7 @@ class Audio:
                     start_time = time.time()  # Start timer.
                 
                 is_recording = True
+
                 audio_array.append(sample)
                 
             else:  # Sample is NOT Active.
@@ -125,7 +126,7 @@ class Audio:
 
         return
     
-    def set_silence_threshold(self, time_s: float=3.0, silence_bump_percent: float=15.0) -> None:
+    def set_silence_threshold(self, time_s: float=3.0, silence_bump_percent: float=100.0) -> None:
         '''
         Read in a short audio clip and try to determine the current level of background noise.
         This is the numerical value for a signal where values over this limit are probably signal
@@ -149,14 +150,16 @@ class Audio:
         time_s: time to record in seconds to calculate average noise.
         silence_bump_percent: The percent to scale up (or down) the average signal power for a silent
             signal. Example: If your average quiet signal power is 10, then set the line for detecting
-            an active signal at 15% (silence_bump_percent = 15) over 10 for a limit of 11.5.
+            an active signal at 100% (silence_bump_percent = 100) over 10 for a limit of 20. In testing, 
+            clearly spoken words seem to be anywhere from 3 - 25x greater than the background noise
+            when that noise is a relatively quiet room and the mic is close the source. 
         '''
 
         data = self.record(time_s=time_s, set_data=False)
 
         rms_silence = self.calc_rms(audio_array=data)  # Root mean square.
         
-        self.silence_threshold = rms_silence * (1 + silence_bump_percent)
+        self.silence_threshold = rms_silence * (1 + silence_bump_percent/100)
         
         return
     
@@ -289,6 +292,6 @@ class Audio:
     @staticmethod
     def calc_rms(audio_array: np.array) -> float:
 
-        rms = np.sqrt(np.mean(np.square(audio_array))) / len(audio_array) # Root mean square.
+        rms = np.sqrt(np.mean(np.square(audio_array))) # Root mean square.
 
         return rms
