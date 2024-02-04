@@ -3,8 +3,6 @@ import pyaudio
 import soundfile as sf
 import matplotlib.pyplot as plt
 import time
-import audioop
-from constants import get_sample_width
 
 
 class Audio:
@@ -37,7 +35,6 @@ class Audio:
         self.channels = None
 
         self.length_s = None
-        self.noise_level = None
         self.silence_threshold = None
 
     def record(self, time_s: float=3.0, set_data: bool=True) -> np.array:
@@ -59,69 +56,76 @@ class Audio:
 
         return data
     
-    def record_activity(self, max_collect_s: float=10.0, dwell_s: float=.2) -> None:
+    def record_activity(
+        self,
+        dwell_s: float=.1,
+        silence_cutoff_s: float=.3,
+        max_sample_length_s: float=10.0,
+        max_run_time_s: float=None) -> None:
         '''
         Opens an audio stream and tries to collect the next full sample of audio.
-        Automatically cuts off the stream once too much time has passed.
-        Limits the collected audio to the start and stop of activity.
-        Does some calculation to only record and keep audio if it counts as activity.
+        Automatically cuts off the stream if too much time has passed and the sample 
+        is too long. Limits the collected audio to the start and stop of activity. 
+        This will keep running until activity is detected or max run time is reached.
 
-        ---
-        max_collect_s: maximum time to collect data before timing out (even if sample is still active).
-            Too long and the ASR model could have difficulty predicting on such a large sample.
-            Realistically, the timeout will be determine more by dwell_s (since a period of dwell_s
-            that is silent will trigger a break).
-        dwell_s: dwell time (in seconds) to collect a micro sample to analyze for activity.
+        dwell_s: time to collect an individual sample from the stream.
+        silence_cutoff_s: stop recording samples if this many of seconds of silence
+            has elapsed since you began recording samples. 
+        max_sample_length_s: stop recording samples if the cumulative samples is
+            over this length. Samples that are too large can cause problems when passed
+            to a transcription model.
+        max_run_time_s: stop listening or recording if you've been listening for
+            this total time. Defaults to None which will run until activity is detected.
         '''
 
-        ready_for_model = False  # Initialize to no good sample found.
-        
-        self._open_stream()
+        # Maximum number of silent dwells before ending collection.
+        max_silent_dwells = int(np.round(silence_cutoff_s / dwell_s))
 
-        full_sample = []
+        audio_array = []  # Store recorded sample of audio here.
+        num_silent_dwells = 0  # Number of silent dwells.
+        is_recording = False
+
+        self._open_stream()
         
-        start_time = time.time()  # Start clock.
-        while (time.time() - start_time) < max_collect_s:
-            
+        while True:
+
             sample = self._read_stream(read_time_s=dwell_s)
 
-            is_active, ends_dead = self._is_active(audio_array=sample)
+            rms_sample = self.calc_rms(audio_array=sample)
 
-            if is_active:  # Has something that looks like non-background sound.
-                full_sample.extend(sample)  # Add snippet to the full sample array.
-                ready_for_model = True
+            if rms_sample > self.silence_threshold:  # Sample is active.
+                if not is_recording:  # Start timer if new recording.
+                    start_time = time.time()  # Start timer.
+                
+                is_recording = True
+                audio_array.append(sample)
+                
+            else:  # Sample is NOT Active.
+                if is_recording:
+                    audio_array.append(sample)
+                    num_silent_dwells += 1
 
-            if ready_for_model and ends_dead:  # Means dead zone found after a sample with activity.
+            # You are recording, but now its quiet, so stop.
+            if num_silent_dwells > max_silent_dwells:
                 break
+            
+            # You are recording, but the active sample is getting too big, so stop.
+            if is_recording:
+                if (time.time() - start_time) > max_sample_length_s:
+                    break
 
+            if max_run_time_s is not None:  # If max run time set, make sure not over this limit.
+                if (time.time() - start_time) > max_run_time_s:
+                    break
+        
         self._close_stream()
-
-        self.data = np.array(full_sample)  # Set the main data as the recorded sample.
+        
+        self.data = np.concatenate(audio_array)
         self.length_s = len(self.data) / self.rate_hz
 
         return
     
-    def record_activity_V2(self):
-
-        audio_array = []
-        num_silent_frames = 0
-        is_recording = False
-
-        self._open_stream(open_now=False)
-        self._stream.start_stream()  # Actually starts the open stream.
-
-        byte_width = get_sample_width(self._stream._format)
-        
-        while True:
-
-            rms = audioop.rms(audio_array, byte_width)  # Calculate RMS (avg signal strength).
-
-            # if rms < self.silence_threshold
-
-
-        return
-    
-    def set_noise_level(self, time_s: float=3.0, percentile: float=99.0) -> None:
+    def set_silence_threshold(self, time_s: float=3.0, silence_bump_percent: float=15.0) -> None:
         '''
         Read in a short audio clip and try to determine the current level of background noise.
         This is the numerical value for a signal where values over this limit are probably signal
@@ -135,22 +139,24 @@ class Audio:
         anything active (like someone talking). To this end, it isn't called automatically anywhere
         because that could throw off levels if you're not prepared. Call this manually.
 
-        Technique: Create a distribution of the absolute value of all values in the sample and 
-        draw the line at the Xth percentile. Making a vague assumption that if X% of the noise 
-        signal is below this level then its a decent limit.
+        Technique: Calculate the Root Mean Squared value of the signal. This is a good approximation
+        for a signal's "power". Divide by length so the value is independent of recording length.
+        Calculate it for the ambient noise. Scale this up by a small amount (X percent) to set a
+        level to compare other signal's power to. If a signal has an RMS over the threshold, then
+        there's a good chance that it's active.
 
         ---
         time_s: time to record in seconds to calculate average noise.
+        silence_bump_percent: The percent to scale up (or down) the average signal power for a silent
+            signal. Example: If your average quiet signal power is 10, then set the line for detecting
+            an active signal at 15% (silence_bump_percent = 15) over 10 for a limit of 11.5.
         '''
 
         data = self.record(time_s=time_s, set_data=False)
 
-        self.noise_level = np.percentile(abs(data), percentile)
-
-        # byte_width = get_sample_width(self._stream._format)
-        # a = audioop.rms(data, byte_width)
+        rms_silence = self.calc_rms(audio_array=data)  # Root mean square.
         
-        # self.silence_threshold
+        self.silence_threshold = rms_silence * (1 + silence_bump_percent)
         
         return
     
@@ -207,8 +213,8 @@ class Audio:
         rate_hz: int=16000,
         channels: int=1,
         frames_per_buffer: int=1024,
-        audio_format: int=pyaudio.paFloat32,
-        open_now: bool=True) -> None: #paInt16
+        audio_format: int=pyaudio.paFloat32,  #paInt16
+        open_now: bool=True) -> None:
         '''
         Opens an audio stream for recording using pyaudio.
 
@@ -274,45 +280,15 @@ class Audio:
         numeric_data = []
         for _ in range(0, int(np.ceil(self.rate_hz / self._stream._frames_per_buffer * read_time_s))):
             raw_buffer = self._stream.read(self._stream._frames_per_buffer)
-            numeric_data.extend(np.frombuffer(raw_buffer, dtype=np.float32))  # int16 TODO: does dtype have to match param "format" of sample?
+            numeric_data.extend(np.frombuffer(raw_buffer, dtype=np.float32))  # TODO: does dtype have to match param "format" of sample?
 
         numeric_data = np.array(numeric_data)  # Convert list to pure numpy array.
 
         return numeric_data
     
-    def _is_active(self, audio_array: np.array, active_percent: float=10.0, look_back_percent: float=25.0) -> bool:
-        '''
-        Determine if an audio sample has any activity, and if it ends in a dead zone. 
+    @staticmethod
+    def calc_rms(audio_array: np.array) -> float:
 
-        ---
-        audio_array: the audio signal to be analyzed.
-        active_percent: if at least this percent of the signal is active, then the
-            sample is considered an "active" sample.
-        look_back_percent: Look at the last X percent of the signal. If there no 
-            above-noise-threshold elements in this "back percent" of the sample, its 
-            the end of the clip and the sound sample "end_dead".
-        '''
+        rms = np.sqrt(np.mean(np.square(audio_array))) / len(audio_array) # Root mean square.
 
-        if self.noise_level is None:
-            raise ValueError('Must calculate noise level first!')
-
-        is_active = False  # Initial state for sample has active points.
-        ends_dead = True  # Initial for the clip ending in a non-active state.
-
-        sample_length = len(audio_array)
-
-        n_look_back = int(np.round(look_back_percent/100 * sample_length))  # Number of frames to look back on.
-        num_active_required = int(np.round(active_percent/100 * sample_length))  # Num active frames required.
-
-        # This is a list of the all the indexes of the frames that were considered "active".
-        i_active = [i for i, value in enumerate(audio_array) if abs(value) > self.noise_level]
-
-        if len(i_active) >= num_active_required:  # Total number of active frames is above threshold...
-            is_active = True
-        
-            # If the last active frame is later than the percent look back frame...
-            if i_active[-1] > (sample_length - n_look_back):  # Last active value.
-                ends_dead = False
-
-        return is_active, ends_dead
-    
+        return rms
