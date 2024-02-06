@@ -26,6 +26,7 @@ See **Notes** section below for additional Linux (RPi) installation requirements
 ### Supported:
 * Windows 11
 * Linux (Raspberry Pi OS Bookworm)
+   * For details on setting up recording devices on the RPi, see [this wiki](https://github.com/EricApgar/HowToRaspberryPi/wiki).
 
 ## Hardware:
 The table below are combinations of Hardware and Models that have been tested. These tests were done using "continuous_asr.py" to determine the working ability of the model. A model that was too large and caused freezing or other problems has no time listed for Transcription Time.
