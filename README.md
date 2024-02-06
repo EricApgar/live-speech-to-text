@@ -1,33 +1,81 @@
 # LiveSpeechToText
-Live speech to text transcription. Ambient sound is recorded and parsed into standalone words or phrases that are streamed to a voice model that will transcribe the sound to text. Works completely offline - no streaming to a service or external connections to websites or 3rd party services needed.
+Speech to text transcription. Ambient sound is recorded and streamed to an Automatic Speech Recognition (ASR) model that will transcribe the audio to text. 
 
-# Running:
-tests/test_audio_object.py has a good run through of the Audio class and how to use it's various methods.
+## Highlights:
+* Works completely offline and runs locally.
+   * No API's or other services needed.
+* Capable of transcribing both pre-recorded audio files (i.e. a .flac file) and running a live stream of audio to perform real time ASR.
+* Multiple Hugging Face ASR model options available.
 
 # Requirements:
 
-## Requires Python 3.11.1 to work.
-Other versions may work but not guranteed.
+## Software:
 
-Create a virtual environment. Then install from "requirements.txt".
+### Python 3.11.1
+Other versions of Python may work but not guranteed.
+
+Create a virtual environment and install from "requirements.txt".
 ```
 pip install -r requirements.txt
 ```
 
-### TODO: Add notes about what kind of models from Hugging Face will work based on the system requirements. 
-For instance, the Facebook960hr model seems to be too big (94.4 million parameters) for the Raspberry Pi 4B in it's default configuration, but runs fine on a decent desktop PC.
+See **Notes** section below for additional Linux (RPi) installation requirements. 
+
+## OS:
+
+### Supported:
+* Windows 11
+* Linux (Raspberry Pi OS Bookworm)
+
+## Hardware:
+The table below are combinations of Hardware and Models that have been tested. These tests were done using "continuous_asr.py" to determine the working ability of the model. A model that was too large and caused freezing or other problems has no time listed for Transcription Time.
+
+See [Hugging Face](https://huggingface.co/models?pipeline_tag=automatic-speech-recognition&sort=downloads) for details on the models.
+
+### Successfully tested hardware/model combinations:
+| Hardware | OS | GPU | Model | Transcription Time |
+|-|-|-|-|-|
+| Raspberry Pi 4B (2 GB) | Raspberry Pi OS *Bookworm* | - | facebook/wav2vec2-base-960hr | - |
+| Raspberry Pi 4B (2 GB) | Raspberry Pi OS *Bookworm* | - | openai/whisper-tiny.en | ~3 sec |
+| Desktop PC | Windows 11 | 3060 Ti | facebook/wav2vec2-base-960hr | ~.15 sec |
+| Desktop PC | Windows 11 | 3060 Ti | openai/whisper-tiny.en | ~.55 sec |
+
+### Audio Recording Hardware:
+| Hardware | Recording Device |
+|-|-|
+| Raspberry Pi 4B (2 GB) | Seeed Studio 2-mic HAT |
+| Desktop PC | Bluetooth headphones with build in mic |
+
+# How to Run:
+
+## continuous_asr.py
+Continually streams live captured audio to the model and transcribes real time.
+
+```
+(.venv) python continuous_asr.py
+```
+
+## tests/test_all.py
+A decent run through of the capabilities of a couple different models and the main audio manipulation class.
+```
+(.venv) python test_all.py
+```
+
+# Notes:
 
 ## Linux:
-On linux (RPi), you might have to run:
+On linux (RPi), There might be additional libraries to install on Linux.
+
+You will likely have to run:
 ```
 sudo apt install portaudio19-dev python3-pyaudio
 ```
 
 This should fix an error when installing from requirements.txt that yells about portaudio installing when trying to install "PyAudio" which is a library in requirements.txt that is needed.
 
-I believe you will also have to install ffmpeg.
+I believe you will also have to install ffmpeg. This will let you load and transcribe a .flac file (a capability that isn't currently supported on Windows because installing ffmpeg was annoying on Windows).
 ```
-sudo install ffmpeg
+sudo apt install ffmpeg
 ```
 
 ### Setup Recording Device:
