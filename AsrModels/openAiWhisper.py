@@ -5,16 +5,21 @@ from transformers import pipeline
 
 class OpenAiWhisperModel():
 
-    def __init__(self):
+    def __init__(self, size_ext: str='tiny.en'):
+        '''
+        size_ext: size of whisper model ('tiny, 'small', etc.) and
+            extension if needed ('en'). Ex: 'tiny.en', 'small', etc.
+        '''
         
-        self.model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny.en")
-        self.processor = WhisperProcessor.from_pretrained("openai/whisper-tiny.en")
+        self.model = WhisperForConditionalGeneration.from_pretrained(f'openai/whisper-{size_ext}')
+        self.processor = WhisperProcessor.from_pretrained(f'openai/whisper-{size_ext}')
 
     def transcribe_audio_array(self, audio_array: np.array, sample_rate_hz: int, max_new_tokens: int=20) -> list:
         '''
         Returns a list of strings (or really a single string in a list) of the
         transcribed audio signal's text.
 
+        ---
         audio_array: numpy array of audio signal data.
         sample_rate_hz: sample rate of passed audio data.
         max_new_tokens: TODO.
@@ -31,7 +36,7 @@ class OpenAiWhisperModel():
         return transcription
     
     @staticmethod
-    def transcribe_audio_file(audio_file: str):
+    def transcribe_audio_file(audio_file: str) -> list:
         '''
         Uses the transformers pipeline to transcribe audio files.
 

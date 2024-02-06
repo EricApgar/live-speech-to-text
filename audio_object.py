@@ -68,6 +68,7 @@ class Audio:
         is too long. Limits the collected audio to the start and stop of activity. 
         This will keep running until activity is detected or max run time is reached.
 
+        ---
         dwell_s: time to collect an individual sample from the stream.
         silence_cutoff_s: stop recording samples if this many of seconds of silence
             has elapsed since you began recording samples. 
@@ -291,6 +292,13 @@ class Audio:
     
     @staticmethod
     def calc_rms(audio_array: np.array) -> float:
+        '''
+        Calculates the RMS of an array. This is a good measure for "signal
+        strength", especially when trying to compare the strengths of two signals.
+
+        ---
+        audioa_array: numpy array of audio signal data.
+        '''
 
         rms = np.sqrt(np.mean(np.square(audio_array))) # Root mean square.
 
