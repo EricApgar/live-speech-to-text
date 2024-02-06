@@ -9,10 +9,6 @@ tests/test_audio_object.py has a good run through of the Audio class and how to 
 ## Requires Python 3.11.1 to work.
 Other versions may work but not guranteed.
 
-### TODO: Future efforts will go into getting this working with the latest version of Python.
-
-### See [here](https://www.python.org/downloads/release/python-378/) for python package download.
-
 Create a virtual environment. Then install from "requirements.txt".
 ```
 pip install -r requirements.txt
