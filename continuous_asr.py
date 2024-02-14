@@ -16,5 +16,7 @@ while True:
     
     text = model.transcribe_audio_array(audio_array=audio.data, sample_rate_hz=audio.rate_hz)
 
+    print(text[0])
+
     if 'stop' in text[0].lower():
         break
