@@ -9,7 +9,7 @@ ctranslate2==3.24.0
 cycler==0.12.1
 faster-whisper==0.10.0
 filelock==3.13.1
-flatbuffers==20181003210633
+flatbuffers==23.5.26
 fonttools==4.47.2
 fsspec==2024.2.0
 huggingface_hub==0.20.3
