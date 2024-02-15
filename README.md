@@ -34,10 +34,11 @@ The table below are combinations of Hardware and Models that have been tested. T
 See [Hugging Face](https://huggingface.co/models?pipeline_tag=automatic-speech-recognition&sort=downloads) for details on the models.
 
 ### Successfully tested hardware/model combinations:
-| Hardware | OS | GPU | Model | Transcription Time |
+| Hardware | OS | GPU | Model | Transcription Time (single spoken word) |
 |-|-|-|-|-|
 | Raspberry Pi 4B (2 GB) | Raspberry Pi OS *Bookworm* | - | facebook/wav2vec2-base-960hr | - |
-| Raspberry Pi 4B (2 GB) | Raspberry Pi OS *Bookworm* | - | openai/whisper-tiny.en | ~3 sec |
+| Raspberry Pi 4B (2 GB) | Raspberry Pi OS *Bookworm* | - | openai/whisper-tiny.en | ~4 sec |
+| Raspberry Pi 4B (2 GB) | Raspberry Pi OS *Bookworm* | - | Systran/faster-whisper-tiny.en | ~3 sec |
 | Desktop PC | Windows 11 | 3060 Ti | facebook/wav2vec2-base-960hr | ~.15 sec |
 | Desktop PC | Windows 11 | 3060 Ti | openai/whisper-tiny.en | ~.55 sec |
 
