@@ -25,7 +25,6 @@ See **Notes** section below for additional Linux (RPi) installation requirements
 
 ### Supported:
 * Linux (Raspberry Pi OS Bookworm)
-   * For details on setting up recording devices on the RPi, see [this wiki](https://github.com/EricApgar/HowToRaspberryPi/wiki).
    * Performance on other Linux distributions has not been tested.
 * Windows 11 (see note below about minor differences)
  
@@ -51,13 +50,16 @@ See [Hugging Face](https://huggingface.co/models?pipeline_tag=automatic-speech-r
 | Desktop PC | Windows 11 | 3060 Ti | openai/whisper-tiny.en | ~.55 sec |
 
 ### Audio Recording Hardware:
+All performance benchmarks were done using the recording devices below.
+
 | Hardware | Recording Device |
 |-|-|
 | Raspberry Pi 4B (2 GB) | Seeed Studio 2-mic HAT |
-| Desktop PC | Bluetooth headphones with build in mic |
+| Desktop PC | Bluetooth headphones with built in mic |
+
+On Windows, there was no additional setup required beyond connecting a recording device. On the Raspberry Pi, there was a additional setup required to connect and specify the recording HAT. For details on setting up recording devices on the RPi, see [this wiki](https://github.com/EricApgar/HowToRaspberryPi/wiki).
 
 # How to Run:
-
 ## continuous_asr.py
 Continually streams live captured audio to the model and transcribes real time.
 
