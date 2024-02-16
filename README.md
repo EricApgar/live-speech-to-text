@@ -27,6 +27,14 @@ See **Notes** section below for additional Linux (RPi) installation requirements
 * Windows 11
 * Linux (Raspberry Pi OS Bookworm)
    * For details on setting up recording devices on the RPi, see [this wiki](https://github.com/EricApgar/HowToRaspberryPi/wiki).
+ 
+### Windows Differences:
+There are two packages that need to be installed separately for full functionality on Windows. These haven't been fully test with this repo and may or may not work after installing.
+* cudnn_ops_infer64_8.dll
+  * Required to run the Systran/faster-whisper-tiny.en model.
+* ffmpeg
+  * REquired by the Hugging Face transformers "pipeline" module. This only affects transcription on a recorded audio file (i.e. .flac). It doesn't affect the continuous ASR which is done by streaming raw audio data. 
+
 
 ## Hardware:
 The table below are combinations of Hardware and Models that have been tested. These tests were done using "continuous_asr.py" to determine the working ability of the model. A model that was too large and caused freezing or other problems has no time listed for Transcription Time.
