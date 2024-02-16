@@ -57,7 +57,7 @@ All performance benchmarks were done using the recording devices below.
 | Raspberry Pi 4B (2 GB) | Seeed Studio 2-mic HAT |
 | Desktop PC | Bluetooth headphones with built in mic |
 
-On Windows, there was no additional setup required beyond connecting a recording device. On the Raspberry Pi, there was a additional setup required to connect and specify the recording HAT. For details on setting up recording devices on the RPi, see [this wiki](https://github.com/EricApgar/HowToRaspberryPi/wiki).
+On Windows, there was no additional setup required beyond connecting a recording device. On the Raspberry Pi, there was additional setup required to connect and specify the recording HAT. For details on setting up recording devices on the RPi, see [this wiki](https://github.com/EricApgar/HowToRaspberryPi/wiki).
 
 # How to Run:
 ## continuous_asr.py
