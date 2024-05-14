@@ -1,4 +1,4 @@
-# LiveSpeechToText
+# live-speech-to-text
 Speech to text transcription. Ambient sound is recorded and streamed to an Automatic Speech Recognition (ASR) model that will transcribe the audio to text. 
 
 ## Highlights:
