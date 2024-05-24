@@ -46,8 +46,8 @@ See [Hugging Face](https://huggingface.co/models?pipeline_tag=automatic-speech-r
 | Raspberry Pi 4B (2 GB) | Raspberry Pi OS *Bookworm* | - | facebook/wav2vec2-base-960hr | - |
 | Raspberry Pi 4B (2 GB) | Raspberry Pi OS *Bookworm* | - | openai/whisper-tiny.en | ~4 sec |
 | Raspberry Pi 4B (2 GB) | Raspberry Pi OS *Bookworm* | - | Systran/faster-whisper-tiny.en | ~3 sec |
-| Desktop PC | Windows 11 | 3060 Ti | facebook/wav2vec2-base-960hr | ~.15 sec |
-| Desktop PC | Windows 11 | 3060 Ti | openai/whisper-tiny.en | ~.55 sec |
+| Desktop PC | Windows 10 | 3060 Ti | facebook/wav2vec2-base-960hr | ~.15 sec |
+| Desktop PC | Windows 10 | 3060 Ti | openai/whisper-tiny.en | ~.55 sec |
 
 ### Audio Recording Hardware:
 All performance benchmarks were done using the recording devices below.
