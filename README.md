@@ -64,13 +64,13 @@ On Windows, there was no additional setup required beyond connecting a recording
 Continually streams live captured audio to the model and transcribes real time.
 
 ```
-(.venv) python continuous_asr.py
+python continuous_asr.py
 ```
 
 ## tests/test_all.py
 A decent run through of the capabilities of a couple different models and the main audio manipulation class.
 ```
-(.venv) python test_all.py
+python test_all.py
 ```
 
 # Notes:
