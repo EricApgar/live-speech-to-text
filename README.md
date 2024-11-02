@@ -10,7 +10,7 @@ Speech to text transcription. Ambient sound is recorded and streamed to an Autom
 # Requirements
 
 ## Microphone Setup
-On Windows, there was no additional setup required beyond connecting a recording device. On the Raspberry Pi, there was additional setup required to connect and specify the recording HAT. For details on setting up recording devices on the RPi, see [this wiki](https://github.com/EricApgar/raspberry-pi-how-to/wiki/Audio-Recording-Basics).
+On Windows, there was no additional setup required beyond connecting a recording device. On Linux (Raspberry pi, etc.), there's some additional setup required to connect and specify the recording HAT. For details on setting up recording devices on the RPi, see [this wiki](https://github.com/EricApgar/raspberry-pi-how-to/wiki/Audio-Recording-Basics).
 
 ## Software
 
