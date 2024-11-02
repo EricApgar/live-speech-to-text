@@ -8,7 +8,9 @@ Speech to text transcription. Ambient sound is recorded and streamed to an Autom
 * Multiple Hugging Face ASR model options available.
 
 # Requirements
-Before creating a virtual environment from the requirements, 
+
+## Microphone Setup
+On Windows, there was no additional setup required beyond connecting a recording device. On the Raspberry Pi, there was additional setup required to connect and specify the recording HAT. For details on setting up recording devices on the RPi, see [this wiki](https://github.com/EricApgar/raspberry-pi-how-to/wiki/Audio-Recording-Basics).
 
 ## Software
 
@@ -57,8 +59,6 @@ All performance benchmarks were done using the recording devices below.
 |-|-|
 | Raspberry Pi 4B (2 GB) | Seeed Studio 2-mic HAT |
 | Desktop PC | Bluetooth headphones with built in mic |
-
-On Windows, there was no additional setup required beyond connecting a recording device. On the Raspberry Pi, there was additional setup required to connect and specify the recording HAT. For details on setting up recording devices on the RPi, see [this wiki](https://github.com/EricApgar/HowToRaspberryPi/wiki).
 
 # How to Run
 ## continuous_asr.py
