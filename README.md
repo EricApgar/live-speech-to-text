@@ -22,8 +22,6 @@ Create a virtual environment and install from "requirements.txt".
 pip install -r requirements.txt
 ```
 
-See **Notes** section below for additional Linux (RPi) installation requirements. 
-
 ## OS
 
 ### Supported
