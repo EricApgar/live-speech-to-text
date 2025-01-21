@@ -59,11 +59,19 @@ All performance benchmarks were done using the recording devices below.
 | Desktop PC | Bluetooth headphones with built in mic |
 
 # How to Run
+
+## Determine Recording Device
+If you are confident that your system's default recording device is the one you want to use, then skip this step. If you're unsure of what the default device is, list all the current recording devices by index make a note of the index of the device you want to use. This index will then be an input for "continuous_asr" ("input_device_index").
+
+```
+python list_recording_devices.py
+```
+
 ## continuous_asr.py
 Continually streams live captured audio to the model and transcribes real time.
 
 ```
-python continuous_asr.py
+python continuous_asr.py --input_device_index <i> --model_name <name of model>
 ```
 
 ## tests/test_all.py

@@ -24,7 +24,12 @@ class Audio:
     is record some audio.
     '''
 
-    def __init__(self):
+    def __init__(self, input_device_index: int=None):
+        '''
+        input_device_index: The index of the audio device to use for recording. See
+            "list_recording_devices.py" to list all devices and pick index. If not set,
+            the system's default recording device is used.
+        '''
 
         self.data = None
 
@@ -36,6 +41,9 @@ class Audio:
 
         self.length_s = None
         self.silence_threshold = None
+
+        self.input_device_index = input_device_index
+
 
     def record(self, time_s: float=3.0, set_data: bool=True) -> np.array:
         '''
@@ -223,9 +231,8 @@ class Audio:
         Opens an audio stream for recording using pyaudio.
 
         ---
-        channels: 1 is mono, 2 is stereo.
         rate_hz: Recording rate - 16k is pretty standard for a lot of applications. 
-        audio_format: TODO. 
+        channels: 1 is mono, 2 is stereo.
         frames_per_buffer: parameter for managing the trade-off between audio processing
             latency and overhead. When audio data is read from or written to the stream, 
             it is done in chunks of this buffer size. A smaller buffer size means that 
@@ -235,6 +242,7 @@ class Audio:
             are fewer buffers to handle) but increases the latency, which might not be 
             suitable for real-time audio processing tasks. Values may need to be a power of 2?
             GPT suggested 512 as an option.
+        audio_format: TODO.
         '''
 
         self._pyaudio_obj = pyaudio.PyAudio()
@@ -245,6 +253,7 @@ class Audio:
             channels=channels,  # If not set, this should default to the recording device's default.
             frames_per_buffer=frames_per_buffer,
             format=audio_format,
+            input_device_index=self.input_device_index,
             start=open_now)
         
         self.rate_hz = rate_hz
