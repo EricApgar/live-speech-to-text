@@ -45,7 +45,11 @@ class Audio:
         self.input_device_index = input_device_index
 
 
-    def record(self, time_s: float=3.0, set_data: bool=True) -> np.array:
+    def record(
+        self,
+        time_s: float=3.0,
+        rate_hz: int=16000,
+        set_data: bool=True) -> np.array:
         '''
         Record an audio sample for X seconds. Saves recorded sample into self.data.
 
@@ -54,7 +58,7 @@ class Audio:
         set_data: whether or not to keep the data. Sometimes recording is for a temp calculation.
         '''
 
-        self._open_stream()
+        self._open_stream(rate_hz=rate_hz)
         data = self._read_stream(read_time_s=time_s)
         if set_data:
             self.data = data
@@ -69,7 +73,8 @@ class Audio:
         dwell_s: float=.1,
         silence_cutoff_s: float=.3,
         max_sample_length_s: float=3.0,
-        max_run_time_s: float=None) -> None:
+        max_run_time_s: float=None,
+        rate_hz: int=16000) -> None:
         '''
         Opens an audio stream and tries to collect the next full sample of audio.
         Automatically cuts off the stream if too much time has passed and the sample 
@@ -94,7 +99,7 @@ class Audio:
         num_silent_dwells = 0  # Number of silent dwells.
         is_recording = False
 
-        self._open_stream()
+        self._open_stream(rate_hz=rate_hz)
         
         while True:
 
@@ -135,7 +140,11 @@ class Audio:
 
         return
     
-    def set_silence_threshold(self, time_s: float=3.0, silence_bump_percent: float=100.0) -> None:
+    def set_silence_threshold(
+        self,
+        time_s: float=3.0,
+        silence_bump_percent: float=100.0,
+        rate_hz: int=16000) -> None:
         '''
         Read in a short audio clip and try to determine the current level of background noise.
         This is the numerical value for a signal where values over this limit are probably signal
@@ -164,7 +173,7 @@ class Audio:
             when that noise is a relatively quiet room and the mic is close the source. 
         '''
 
-        data = self.record(time_s=time_s, set_data=False)
+        data = self.record(time_s=time_s, set_data=False, rate_hz=rate_hz)
 
         rms_silence = self.calc_rms(audio_array=data)  # Root mean square.
         
