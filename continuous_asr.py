@@ -80,4 +80,4 @@ if __name__ == "__main__":
     main(
         input_device_index=args.input_device_index,
         model_name=args.model_name,
-        rate_hz=args.sample_rate_hz)
+        rate_hz=args.rate_hz)
