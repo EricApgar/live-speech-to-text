@@ -235,7 +235,7 @@ class Audio:
         self,
         rate_hz: int=16000,
         channels: int=1,
-        frames_per_buffer: int=8192, # 1024 is a good value.
+        frames_per_buffer: int=16384, # 1024 is a good value.
         audio_format: int=pyaudio.paFloat32,  #paInt16
         open_now: bool=True) -> None:
         '''
