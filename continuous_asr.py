@@ -37,7 +37,7 @@ def main(input_device_index: int=None, model_name: str="openai_whisper", rate_hz
     audio = Audio(input_device_index=input_device_index)
     
     print('Setting silence threshold... shhh...')
-    audio.set_silence_threshold()
+    audio.set_silence_threshold(rate_hz=rate_hz)
     print('Done.\n')
 
     print('Waiting to transcribe...\n')
