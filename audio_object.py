@@ -1,8 +1,10 @@
+import math
+import time
+
 import numpy as np
 import pyaudio
 import soundfile as sf
 import matplotlib.pyplot as plt
-import time
 
 
 class Audio:
@@ -233,7 +235,7 @@ class Audio:
         self,
         rate_hz: int=16000,
         channels: int=1,
-        frames_per_buffer: int=1024,
+        frames_per_buffer: int=None, # 1024 is a good value.
         audio_format: int=pyaudio.paFloat32,  #paInt16
         open_now: bool=True) -> None:
         '''
@@ -254,6 +256,9 @@ class Audio:
         audio_format: TODO.
         '''
 
+        if frames_per_buffer is None:
+            frames_per_buffer = self.calc_frames_per_buffer(rate_hz=rate_hz)
+
         self._pyaudio_obj = pyaudio.PyAudio()
 
         self._stream = self._pyaudio_obj.open(
@@ -270,6 +275,7 @@ class Audio:
 
         return
     
+
     def _close_stream(self) -> None:
         '''
         Cleanly close the stream and the PyAudio object from which the stream originated.
@@ -283,6 +289,7 @@ class Audio:
         # TODO: Should I reset the stream and pyaudio params to None?
 
         return
+
 
     def _read_stream(self, read_time_s: float=.5) -> np.array:
         '''
@@ -308,6 +315,21 @@ class Audio:
 
         return numeric_data
     
+
+    @staticmethod
+    def calc_frames_per_buffer(rate_hz: int, desired_latency_ms: int=50) -> int:
+        '''
+        If the sample rate is too high, a lower frames_per_buffer will cause
+        an overflow error as the system can't buffer data and kick it onwards
+        fast enough to keep up with the sampling rate.
+        '''
+        raw_value = rate_hz * desired_latency_ms / 1000
+        # Round to the nearest power of 2
+        result = 2 ** int(math.log2(raw_value)) if raw_value >= 256 else 256
+
+        return result
+
+
     @staticmethod
     def calc_rms(audio_array: np.array) -> float:
         '''
