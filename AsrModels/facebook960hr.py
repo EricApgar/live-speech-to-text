@@ -11,6 +11,7 @@ class Facebook960hrModel():
         self.processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base-960h")
         self.model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-base-960h")
 
+
     def transcribe_audio_array(self, audio_array: np.array, sample_rate_hz: int) -> list:
         '''
         Returns a list of strings (or really a single string in a list) of the
@@ -37,6 +38,14 @@ class Facebook960hrModel():
 
         return transcription
     
+
+    def get_sample_rate(self) -> int:
+        
+        sample_rate_hz = self.processor.feature_extractor.sampling_rate
+
+        return sample_rate_hz
+    
+    
     @staticmethod
     def transcribe_audio_file(audio_file: str) -> list:
         '''
@@ -46,7 +55,7 @@ class Facebook960hrModel():
         audio_file: full file path to audio file.
         '''
 
-        model = pipeline("automatic-speech-recognition", "facebook/wav2vec2-base-960h")
+        model = pipeline(task="automatic-speech-recognition", model="facebook/wav2vec2-base-960h")
         transcription = model(audio_file)  # chunk_length_s=30
 
         return transcription["text"]

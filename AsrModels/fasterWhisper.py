@@ -12,6 +12,7 @@ class FasterWhisperModel():
         
         self.model = WhisperModel(size_ext)
 
+
     def transcribe_audio_array(self, audio_array: np.array) -> list:
         '''
         Returns a list of strings (or really a single string in a list) of the
@@ -21,11 +22,12 @@ class FasterWhisperModel():
         audio_array: numpy array of audio signal data.
         '''
 
-        segments, info = self.model.transcribe(audio_array)
+        segments, info = self.model.transcribe(audio=audio_array)
         transcription = [segment.text for segment in segments]
 
         return transcription
     
+
     def transcribe_audio_file(self, audio_file: str) -> list:
         '''
         Transcribe an audio file.
@@ -33,7 +35,17 @@ class FasterWhisperModel():
         audio_file: full file path to audio file.
         '''
 
-        segments, info = self.model.transcribe(audio_file)
+        segments, info = self.model.transcribe(audio=audio_file)
         transcription = [segment.text for segment in segments]
 
         return transcription
+    
+
+    def get_sample_rate(self) -> int:
+        '''
+        This is an inherited property of the main whisper model. It's
+        not on the fast whisper as a property but is known to be 16000.
+        '''
+        sample_rate_hz = 16000
+
+        return sample_rate_hz

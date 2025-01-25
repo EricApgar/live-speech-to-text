@@ -5,6 +5,7 @@ import numpy as np
 import pyaudio
 import soundfile as sf
 import matplotlib.pyplot as plt
+from scipy.signal import resample_poly
 
 
 class Audio:
@@ -33,18 +34,18 @@ class Audio:
             the system's default recording device is used.
         '''
 
+        self.input_device_index = input_device_index
+
         self.data = None
 
         self._pyaudio_obj = None
         self._stream = None
 
         self.rate_hz = None
-        self.channels = None
+        # self.channels = None
 
         self.length_s = None
         self.silence_threshold = None
-
-        self.input_device_index = input_device_index
 
 
     def record(
@@ -53,23 +54,27 @@ class Audio:
         rate_hz: int=16000,
         set_data: bool=True) -> np.array:
         '''
-        Record an audio sample for X seconds. Saves recorded sample into self.data.
+        Record an audio sample for X seconds.
 
         ---
         time_s: time to record sample for in seconds.
+        rate_hz: record at this sample rate.
         set_data: whether or not to keep the data. Sometimes recording is for a temp calculation.
         '''
 
         self._open_stream(rate_hz=rate_hz)
         data = self._read_stream(read_time_s=time_s)
+        
         if set_data:
             self.data = data
+            self.rate_hz = rate_hz
+            self.length_s = time_s
+        
         self._close_stream()
 
-        self.length_s = time_s
-
         return data
-    
+
+
     def record_activity(
         self,
         dwell_s: float=.1,
@@ -92,6 +97,7 @@ class Audio:
             to a transcription model.
         max_run_time_s: stop listening or recording if you've been listening for
             this total time. Defaults to None which will run until activity is detected.
+        rate_hz: record at this sample rate.
         '''
 
         # Maximum number of silent dwells before ending collection.
@@ -138,10 +144,38 @@ class Audio:
         self._close_stream()
         
         self.data = np.concatenate(audio_array)
+        self.rate_hz = rate_hz
         self.length_s = len(self.data) / self.rate_hz
 
         return
     
+
+    def resample_audio(self, rate_hz: int=16000):
+        '''
+        Resample the current data to the new rate.
+
+        rate_hz: the target rate to resample the data to.
+        '''
+
+        if self.data is None:
+            raise ValueError('No data to resample!')
+
+        target_rate_hz = rate_hz  # Renaming to make it clear.
+
+        if target_rate_hz == self.rate_hz:
+            return  # Data already correctly sampled.
+
+        # Calculate the greatest common divisor (GCD) for efficient resampling.
+        gcd = np.gcd(self.rate_hz, target_rate_hz)
+        up = target_rate_hz // gcd
+        down = self.rate_hz // gcd
+
+        self.data = resample_poly(x=self.data, up=up, down=down).astype(np.float32)
+        self.rate_hz = target_rate_hz
+
+        return
+
+
     def set_silence_threshold(
         self,
         time_s: float=3.0,
@@ -182,7 +216,8 @@ class Audio:
         self.silence_threshold = rms_silence * (1 + silence_bump_percent/100)
         
         return
-    
+
+
     def plot(self, save_path: str='audio.png') -> None:
         '''
         Plots current data. Since plot objects tend to freeze up the system until they are closed, 
@@ -210,7 +245,10 @@ class Audio:
 
         plt.savefig(save_path)
         plt.close()  # Close the plot to free up memory.
-    
+
+        return
+
+
     def save_as(self, save_path: str='audio.flac') -> None:
         '''
         Saves the current data to a .flac file.
@@ -231,13 +269,13 @@ class Audio:
 
         return
 
+
     def _open_stream(
         self,
         rate_hz: int=16000,
         channels: int=1,
-        frames_per_buffer: int=256, # 1024 is a good value.
-        audio_format: int=pyaudio.paFloat32,  #paInt16
-        open_now: bool=True) -> None:
+        frames_per_buffer: int=1024, # 1024 is a good value.
+        audio_format: int=pyaudio.paFloat32) -> None:  # paInt16
         '''
         Opens an audio stream for recording using pyaudio.
 
@@ -254,6 +292,8 @@ class Audio:
             suitable for real-time audio processing tasks. Values may need to be a power of 2?
             GPT suggested 512 as an option.
         audio_format: TODO.
+
+        # open_now: bool=True
         '''
 
         if frames_per_buffer is None:
@@ -268,10 +308,10 @@ class Audio:
             frames_per_buffer=frames_per_buffer,
             format=audio_format,
             input_device_index=self.input_device_index,
-            start=open_now)
+            start=True)
         
         self.rate_hz = rate_hz
-        self.channels = channels
+        # self.channels = channels
 
         return
     
@@ -322,9 +362,15 @@ class Audio:
         If the sample rate is too high, a lower frames_per_buffer will cause
         an overflow error as the system can't buffer data and kick it onwards
         fast enough to keep up with the sampling rate.
+
+        TODO: Actually, a low sample rate is better? 256 worked.
         '''
-        raw_value = rate_hz * desired_latency_ms / 1000
-        # Round to the nearest power of 2
+
+        MS_TO_SEC = 1/1000
+
+        raw_value = rate_hz * desired_latency_ms * MS_TO_SEC
+
+        # Round to the nearest power of 2.
         result = 2 ** int(math.log2(raw_value)) if raw_value >= 256 else 256
 
         return result
