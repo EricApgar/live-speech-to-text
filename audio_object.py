@@ -274,7 +274,7 @@ class Audio:
         self,
         rate_hz: int=16000,
         channels: int=1,
-        frames_per_buffer: int=1024, # 1024 is a good value.
+        frames_per_buffer: int=512, # 1024 is a good value.
         audio_format: int=pyaudio.paFloat32) -> None:  # paInt16
         '''
         Opens an audio stream for recording using pyaudio.
