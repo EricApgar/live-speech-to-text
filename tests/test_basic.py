@@ -12,11 +12,11 @@ from continuous_asr import get_recording_sample_rate
 
 model = OpenAiWhisperModel()
 model_rate_hz = model.get_sample_rate()
-print(f'Model: OpenAI Whisper, Sample Rate (Hz): {model_rate_hz}')
+print(f'\n\nModel: OpenAI Whisper, Sample Rate (Hz): {model_rate_hz}\n\n')
 
 # Get the recording device sample rate closest to the model's sample rate.
 record_rate_hz = get_recording_sample_rate(input_device_index=11, target_rate_hz=model_rate_hz)
-print(f'Recording Rate (Hz): {record_rate_hz}')
+print(f'\n\nRecording Rate (Hz): {record_rate_hz}\n\n')
 
 A = Audio(input_device_index=11)
 
@@ -29,6 +29,6 @@ for frames_per_buffer in frames_per_buffer_test:
         data = A._read_stream()
         A._close_stream()
 
-        print(f'Valid frames_per_buffer: {frames_per_buffer}')
+        print(f'\n\nValid frames_per_buffer: {frames_per_buffer}\n\n')
     except:
         pass
