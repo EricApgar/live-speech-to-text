@@ -38,7 +38,7 @@ A.set_silence_threshold(rate_hz=record_rate_hz)
 print('Done.\n\n')
 
 print('\n\nRecording Audio...')
-A.record(rate_hz=model_rate_hz)
+A.record(rate_hz=record_rate_hz)
 print('Done.\n\n')
 
 print('\n\nResampling Audio...')
