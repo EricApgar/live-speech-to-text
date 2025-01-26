@@ -296,8 +296,8 @@ class Audio:
         # open_now: bool=True
         '''
 
-        if frames_per_buffer is None:
-            frames_per_buffer = self.calc_frames_per_buffer(rate_hz=rate_hz)
+        # if frames_per_buffer is None:
+        #     frames_per_buffer = self.calc_frames_per_buffer(rate_hz=rate_hz)
 
         self._pyaudio_obj = pyaudio.PyAudio()
 

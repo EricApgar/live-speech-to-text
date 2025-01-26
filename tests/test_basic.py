@@ -32,3 +32,19 @@ for frames_per_buffer in frames_per_buffer_test:
         print(f'\n\nValid frames_per_buffer: {frames_per_buffer}\n\n')
     except:
         pass
+
+print('\n\nSetting silence threshold... shhh...')
+A.set_silence_threshold(rate_hz=record_rate_hz)
+print('Done.\n\n')
+
+print('\n\nRecording Audio...')
+A.record(rate_hz=model_rate_hz)
+print('Done.\n\n')
+
+print('\n\nResampling Audio...')
+A.resample_audio(rate_hz=model_rate_hz)
+print('Done.\n\n')
+
+print('\n\nRecording Activity...')
+A.record_activity(rate_hz=record_rate_hz)
+print('Done.\n\n')
