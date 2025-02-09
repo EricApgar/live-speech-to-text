@@ -1,4 +1,6 @@
 import argparse
+import os
+import sys
 
 from audio_object import Audio
 from AsrModels.openAiWhisper import OpenAiWhisperModel
@@ -41,6 +43,10 @@ def get_recording_sample_rate(input_device_index: int, target_rate_hz: int) -> i
 
 
 def main(input_device_index: int=None, model_name: str="openai_whisper"):
+
+    if input_device_index is not None:
+        if sys.platform.startswith('linux'):
+            os.environ['ALSADEV'] = f'hw:2,0'
 
     # Initialize the model and get its sample rate.
     model = get_model_by_name(model_name)
