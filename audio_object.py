@@ -1,5 +1,7 @@
 import math
 import time
+import os
+import sys
 
 import numpy as np
 import pyaudio
@@ -299,7 +301,15 @@ class Audio:
         # if frames_per_buffer is None:
         #     frames_per_buffer = self.calc_frames_per_buffer(rate_hz=rate_hz)
 
+        # Ignore linux ALSA audio lib print clutter.
+        if sys.platform.startswith('linux'):
+            sys.stderr = open(os.devnull, 'w')
+
         self._pyaudio_obj = pyaudio.PyAudio()
+
+        # Ignore linux ALSA audio lib print clutter.
+        if sys.platform.startswith('linux'):
+            sys.stderr = sys.__stderr__
 
         self._stream = self._pyaudio_obj.open(
             input=True,  # Tells the stream you are opening to record data.
