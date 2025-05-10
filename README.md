@@ -61,7 +61,7 @@ All performance benchmarks were done using the recording devices below.
 # How to Run
 
 ## Determine Recording Device
-If you are confident that your system's default recording device is the one you want to use, then skip this step. If you're unsure of what the default device is, list all the current recording devices by index make a note of the index of the device you want to use. This index will then be an input for "continuous_asr" ("input_device_index").
+If you are confident that your system's default recording device is the one you want to use, then skip this step. If you're unsure of what the default device is, list all the current recording devices by index and make a note of the index of the device you want to use. This index will then be an input for "continuous_asr" ("input_device_index").
 
 ```
 python list_recording_devices.py
@@ -73,6 +73,13 @@ Continually streams live captured audio to the model and transcribes real time.
 ```
 python continuous_asr.py --input_device_index <i> --model_name <name of model>
 ```
+
+### Input Args
+
+See "continuous_asr.py" for a breakdown of all optional input arguments, their descriptions, and default values.
+
+### Sample Rate Note
+Not all recording devices have the same sample rate options that they can record data at. The ASR models currently all *require* the input data to be at 16000 Hz. This repo will automatically choose the selected recording device's sample rate closest to 16000 Hz and then resample the data if needed to be at 16000.
 
 ## tests/test_all.py
 A decent run through of the capabilities of a couple different models and the main audio manipulation class.

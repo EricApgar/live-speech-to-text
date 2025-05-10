@@ -1,8 +1,13 @@
+import math
+import time
+import os
+import sys
+
 import numpy as np
 import pyaudio
 import soundfile as sf
 import matplotlib.pyplot as plt
-import time
+from scipy.signal import resample_poly
 
 
 class Audio:
@@ -31,45 +36,54 @@ class Audio:
             the system's default recording device is used.
         '''
 
+        self.input_device_index = input_device_index
+
         self.data = None
 
         self._pyaudio_obj = None
         self._stream = None
 
         self.rate_hz = None
-        self.channels = None
+        # self.channels = None
 
         self.length_s = None
         self.silence_threshold = None
 
-        self.input_device_index = input_device_index
 
-
-    def record(self, time_s: float=3.0, set_data: bool=True) -> np.array:
+    def record(
+        self,
+        time_s: float=3.0,
+        rate_hz: int=16000,
+        set_data: bool=True) -> np.array:
         '''
-        Record an audio sample for X seconds. Saves recorded sample into self.data.
+        Record an audio sample for X seconds.
 
         ---
         time_s: time to record sample for in seconds.
+        rate_hz: record at this sample rate.
         set_data: whether or not to keep the data. Sometimes recording is for a temp calculation.
         '''
 
-        self._open_stream()
+        self._open_stream(rate_hz=rate_hz)
         data = self._read_stream(read_time_s=time_s)
+        
         if set_data:
             self.data = data
+            self.rate_hz = rate_hz
+            self.length_s = time_s
+        
         self._close_stream()
 
-        self.length_s = time_s
-
         return data
-    
+
+
     def record_activity(
         self,
         dwell_s: float=.1,
         silence_cutoff_s: float=.3,
         max_sample_length_s: float=3.0,
-        max_run_time_s: float=None) -> None:
+        max_run_time_s: float=None,
+        rate_hz: int=16000) -> None:
         '''
         Opens an audio stream and tries to collect the next full sample of audio.
         Automatically cuts off the stream if too much time has passed and the sample 
@@ -85,6 +99,7 @@ class Audio:
             to a transcription model.
         max_run_time_s: stop listening or recording if you've been listening for
             this total time. Defaults to None which will run until activity is detected.
+        rate_hz: record at this sample rate.
         '''
 
         # Maximum number of silent dwells before ending collection.
@@ -94,7 +109,7 @@ class Audio:
         num_silent_dwells = 0  # Number of silent dwells.
         is_recording = False
 
-        self._open_stream()
+        self._open_stream(rate_hz=rate_hz)
         
         while True:
 
@@ -131,11 +146,43 @@ class Audio:
         self._close_stream()
         
         self.data = np.concatenate(audio_array)
+        self.rate_hz = rate_hz
         self.length_s = len(self.data) / self.rate_hz
 
         return
     
-    def set_silence_threshold(self, time_s: float=3.0, silence_bump_percent: float=100.0) -> None:
+
+    def resample_audio(self, rate_hz: int=16000):
+        '''
+        Resample the current data to the new rate.
+
+        rate_hz: the target rate to resample the data to.
+        '''
+
+        if self.data is None:
+            raise ValueError('No data to resample!')
+
+        target_rate_hz = rate_hz  # Renaming to make it clear.
+
+        if target_rate_hz == self.rate_hz:
+            return  # Data already correctly sampled.
+
+        # Calculate the greatest common divisor (GCD) for efficient resampling.
+        gcd = np.gcd(self.rate_hz, target_rate_hz)
+        up = target_rate_hz // gcd
+        down = self.rate_hz // gcd
+
+        self.data = resample_poly(x=self.data, up=up, down=down).astype(np.float32)
+        self.rate_hz = target_rate_hz
+
+        return
+
+
+    def set_silence_threshold(
+        self,
+        time_s: float=3.0,
+        silence_bump_percent: float=100.0,
+        rate_hz: int=16000) -> None:
         '''
         Read in a short audio clip and try to determine the current level of background noise.
         This is the numerical value for a signal where values over this limit are probably signal
@@ -164,14 +211,15 @@ class Audio:
             when that noise is a relatively quiet room and the mic is close the source. 
         '''
 
-        data = self.record(time_s=time_s, set_data=False)
+        data = self.record(time_s=time_s, set_data=False, rate_hz=rate_hz)
 
         rms_silence = self.calc_rms(audio_array=data)  # Root mean square.
         
         self.silence_threshold = rms_silence * (1 + silence_bump_percent/100)
         
         return
-    
+
+
     def plot(self, save_path: str='audio.png') -> None:
         '''
         Plots current data. Since plot objects tend to freeze up the system until they are closed, 
@@ -199,7 +247,10 @@ class Audio:
 
         plt.savefig(save_path)
         plt.close()  # Close the plot to free up memory.
-    
+
+        return
+
+
     def save_as(self, save_path: str='audio.flac') -> None:
         '''
         Saves the current data to a .flac file.
@@ -220,13 +271,13 @@ class Audio:
 
         return
 
+
     def _open_stream(
         self,
         rate_hz: int=16000,
         channels: int=1,
-        frames_per_buffer: int=1024,
-        audio_format: int=pyaudio.paFloat32,  #paInt16
-        open_now: bool=True) -> None:
+        frames_per_buffer: int=512, # 1024 is a good value.
+        audio_format: int=pyaudio.paFloat32) -> None:  # paInt16
         '''
         Opens an audio stream for recording using pyaudio.
 
@@ -243,9 +294,22 @@ class Audio:
             suitable for real-time audio processing tasks. Values may need to be a power of 2?
             GPT suggested 512 as an option.
         audio_format: TODO.
+
+        # open_now: bool=True
         '''
 
+        # if frames_per_buffer is None:
+        #     frames_per_buffer = self.calc_frames_per_buffer(rate_hz=rate_hz)
+
+        # Ignore linux ALSA audio lib print clutter.
+        # if sys.platform.startswith('linux'):
+        #     sys.stderr = open(os.devnull, 'w')
+
         self._pyaudio_obj = pyaudio.PyAudio()
+
+        # Ignore linux ALSA audio lib print clutter.
+        # if sys.platform.startswith('linux'):
+        #     sys.stderr = sys.__stderr__
 
         self._stream = self._pyaudio_obj.open(
             input=True,  # Tells the stream you are opening to record data.
@@ -254,13 +318,14 @@ class Audio:
             frames_per_buffer=frames_per_buffer,
             format=audio_format,
             input_device_index=self.input_device_index,
-            start=open_now)
+            start=True)
         
         self.rate_hz = rate_hz
-        self.channels = channels
+        # self.channels = channels
 
         return
     
+
     def _close_stream(self) -> None:
         '''
         Cleanly close the stream and the PyAudio object from which the stream originated.
@@ -274,6 +339,7 @@ class Audio:
         # TODO: Should I reset the stream and pyaudio params to None?
 
         return
+
 
     def _read_stream(self, read_time_s: float=.5) -> np.array:
         '''
@@ -299,6 +365,27 @@ class Audio:
 
         return numeric_data
     
+
+    @staticmethod
+    def calc_frames_per_buffer(rate_hz: int, desired_latency_ms: int=50) -> int:
+        '''
+        If the sample rate is too high, a lower frames_per_buffer will cause
+        an overflow error as the system can't buffer data and kick it onwards
+        fast enough to keep up with the sampling rate.
+
+        TODO: Actually, a low sample rate is better? 256 worked.
+        '''
+
+        MS_TO_SEC = 1/1000
+
+        raw_value = rate_hz * desired_latency_ms * MS_TO_SEC
+
+        # Round to the nearest power of 2.
+        result = 2 ** int(math.log2(raw_value)) if raw_value >= 256 else 256
+
+        return result
+
+
     @staticmethod
     def calc_rms(audio_array: np.array) -> float:
         '''

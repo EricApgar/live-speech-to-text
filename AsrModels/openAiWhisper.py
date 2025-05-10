@@ -14,6 +14,7 @@ class OpenAiWhisperModel():
         self.model = WhisperForConditionalGeneration.from_pretrained(f'openai/whisper-{size_ext}')
         self.processor = WhisperProcessor.from_pretrained(f'openai/whisper-{size_ext}')
 
+
     def transcribe_audio_array(self, audio_array: np.array, sample_rate_hz: int, max_new_tokens: int=20) -> list:
         '''
         Returns a list of strings (or really a single string in a list) of the
@@ -35,6 +36,14 @@ class OpenAiWhisperModel():
 
         return transcription
     
+
+    def get_sample_rate(self) -> int:
+        
+        sample_rate_hz = self.processor.feature_extractor.sampling_rate
+
+        return sample_rate_hz
+    
+
     @staticmethod
     def transcribe_audio_file(audio_file: str) -> list:
         '''
@@ -43,7 +52,7 @@ class OpenAiWhisperModel():
         audio_file: full file path to audio file.
         '''
 
-        model = pipeline("automatic-speech-recognition", "openai/whisper-tiny")
+        model = pipeline(task="automatic-speech-recognition", model="openai/whisper-tiny")
         transcription = model(audio_file)  # Optional Param: chunk_length_s=30
 
         return transcription["text"]
